@@ -2,7 +2,10 @@
   "name": "porcelanas-platform",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace apps/api & npm run dev --workspace apps/web",
     "build": "npm run build --workspace apps/web && npm run build --workspace apps/api",
@@ -13,11 +16,14 @@
     "db:seed:demo": "npm run db:seed:demo --workspace apps/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace packages/shared && npm run test --workspace apps/api && npm run test --workspace apps/web",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "postinstall": "prisma generate --schema apps/api/prisma/schema.prisma"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "typescript": "5.9.3"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
