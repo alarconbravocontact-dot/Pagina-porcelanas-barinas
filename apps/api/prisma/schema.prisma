@@ -1,0 +1,671 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  CUSTOMER
+}
+
+enum Finish {
+  MATE
+  BRILLANTE
+  PULIDO
+  SATINADO
+  TEXTURIZADO
+  RUSTICO
+  OTRO
+}
+
+enum AntiSlip {
+  YES
+  NO
+  UNVERIFIED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}
+
+enum PricingBasis {
+  M2
+  BOX
+}
+
+enum QuantityMode {
+  BOXES
+  M2
+}
+
+enum InventoryMovementType {
+  INITIAL
+  RECEIPT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  DAMAGE
+  RESERVE
+  RELEASE
+  DELIVERY
+}
+
+enum RateSource {
+  BCV_AUTO
+  MANUAL
+}
+
+enum OrderType {
+  PICKUP
+  PREPAY
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  READY_FOR_PICKUP
+  DELIVERED
+  CANCELLED
+  EXPIRED
+}
+
+enum OrderPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum ReservationStatus {
+  HELD
+  CONFIRMED
+  FULFILLED
+  RELEASED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REPLACED
+}
+
+enum PaymentMethodKind {
+  PAGO_MOVIL
+  ZELLE
+  BINANCE
+  BANK_TRANSFER
+  CASH
+}
+
+enum Currency {
+  USD
+  VES
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+enum OrderNoteKind {
+  NOTE
+  INCIDENT
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(CUSTOMER)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  customer       CustomerProfile?
+  seller         Seller?
+  sessions       Session[]
+  carts          Cart[]
+  notifications  Notification[]
+  messages       Message[]
+  auditLogs      AuditLog[]
+  reviewedPays   Payment[]           @relation("PaymentReviewer")
+  submittedPays  Payment[]           @relation("PaymentSubmitter")
+  proofsUploaded PaymentProof[]
+  orderEvents    OrderEvent[]
+  orderNotes     OrderNote[]
+  rates          ExchangeRate[]
+  movements      InventoryMovement[]
+  priceChanges   PriceHistory[]
+
+  @@index([role])
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  /// SHA-256 del token de sesión; el token en claro solo vive en la cookie.
+  tokenHash  String   @unique
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  ip         String?
+  userAgent  String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model CustomerProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders        Order[]
+  conversations Conversation[]
+}
+
+model Seller {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fullName          String
+  displayName       String
+  phone             String
+  bio               String?
+  active            Boolean  @default(true)
+  canReviewPayments Boolean  @default(false)
+  canViewProofs     Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders        Order[]
+  conversations Conversation[]
+
+  @@index([active])
+}
+
+model Category {
+  id        String            @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String            @unique
+  sortOrder Int               @default(0)
+  active    Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  products  ProductCategory[]
+}
+
+model Product {
+  id            String        @id @default(uuid()) @db.Uuid
+  sku           String        @unique
+  name          String
+  description   String        @default("")
+  color         String
+  widthCm       Decimal       @db.Decimal(8, 2)
+  lengthCm      Decimal       @db.Decimal(8, 2)
+  /// Etiqueta normalizada del formato, p. ej. "60x60".
+  sizeLabel     String
+  thicknessMm   Decimal?      @db.Decimal(6, 2)
+  piecesPerBox  Int
+  /// m² por caja en unidades de cm² (1 m² = 10 000).
+  boxAreaUnits  Int
+  pricingBasis  PricingBasis  @default(M2)
+  priceBoxCents Int
+  priceM2Cents  Int
+  finish        Finish
+  antiSlip      AntiSlip      @default(UNVERIFIED)
+  status        ProductStatus @default(DRAFT)
+  featured      Boolean       @default(false)
+  isDemo        Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  images       ProductImage[]
+  categories   ProductCategory[]
+  inventory    Inventory?
+  movements    InventoryMovement[]
+  priceHistory PriceHistory[]
+  orderItems   OrderItem[]
+  cartItems    CartItem[]
+
+  @@index([status])
+  @@index([color])
+  @@index([sizeLabel])
+  @@index([finish])
+  @@index([priceBoxCents])
+  @@index([priceM2Cents])
+  @@index([featured])
+}
+
+model ProductCategory {
+  productId  String   @db.Uuid
+  categoryId String   @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storageKey String   @unique
+  mimeType   String
+  sizeBytes  Int
+  alt        String   @default("")
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([productId, sortOrder])
+}
+
+model Inventory {
+  productId         String   @id @db.Uuid
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Cajas físicas en la sede.
+  onHandBoxes       Int      @default(0)
+  /// Cajas apartadas por operaciones activas.
+  reservedBoxes     Int      @default(0)
+  lowStockThreshold Int      @default(10)
+  updatedAt         DateTime @updatedAt
+}
+
+model InventoryMovement {
+  id            String                @id @default(uuid()) @db.Uuid
+  productId     String                @db.Uuid
+  product       Product               @relation(fields: [productId], references: [id], onDelete: Restrict)
+  type          InventoryMovementType
+  deltaOnHand   Int
+  deltaReserved Int
+  onHandAfter   Int
+  reservedAfter Int
+  reason        String
+  orderId       String?               @db.Uuid
+  order         Order?                @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  userId        String?               @db.Uuid
+  user          User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime              @default(now())
+
+  @@index([productId, createdAt])
+  @@index([orderId])
+}
+
+model PriceHistory {
+  id            String       @id @default(uuid()) @db.Uuid
+  productId     String       @db.Uuid
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pricingBasis  PricingBasis
+  priceBoxCents Int
+  priceM2Cents  Int
+  changedById   String?      @db.Uuid
+  changedBy     User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+
+  @@index([productId, createdAt])
+}
+
+model ExchangeRate {
+  id            String     @id @default(uuid()) @db.Uuid
+  currency      String     @default("VES")
+  /// Bolívares por 1 USD.
+  rate          Decimal    @db.Decimal(20, 8)
+  source        RateSource
+  sourceUrl     String?
+  sourceNote    String?
+  /// Fecha valor publicada por la fuente (fecha comercial).
+  effectiveDate DateTime   @db.Date
+  createdById   String?    @db.Uuid
+  createdBy     User?      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime   @default(now())
+
+  quotes Quote[]
+  orders Order[]
+
+  @@index([createdAt])
+}
+
+model Cart {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String?    @unique @db.Uuid
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 del token anónimo del carrito (cookie httpOnly) para visitantes.
+  guestToken String?    @unique
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  items      CartItem[]
+}
+
+model CartItem {
+  id        String       @id @default(uuid()) @db.Uuid
+  cartId    String       @db.Uuid
+  cart      Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String       @db.Uuid
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mode      QuantityMode
+  /// Cantidad solicitada como texto decimal normalizado (cajas o m²).
+  quantity  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+model Quote {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String?       @db.Uuid
+  exchangeRateId String?       @db.Uuid
+  exchangeRate   ExchangeRate? @relation(fields: [exchangeRateId], references: [id], onDelete: Restrict)
+  rateValue      Decimal?      @db.Decimal(20, 8)
+  lines          Json
+  subtotalCents  Int
+  totalVesCents  Int?
+  validUntil     DateTime
+  createdAt      DateTime      @default(now())
+  orders         Order[]
+
+  @@index([userId])
+}
+
+model PaymentMethod {
+  id            String            @id @default(uuid()) @db.Uuid
+  kind          PaymentMethodKind
+  name          String
+  currency      Currency
+  instructions  String
+  requiresProof Boolean           @default(true)
+  active        Boolean           @default(true)
+  sortOrder     Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  orders   Order[]
+  payments Payment[]
+}
+
+model Order {
+  id                String             @id @default(uuid()) @db.Uuid
+  /// Referencia pública no secuencial, p. ej. "PC-7K3M9Q2A".
+  code              String             @unique
+  customerId        String             @db.Uuid
+  customer          CustomerProfile    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sellerId          String             @db.Uuid
+  seller            Seller             @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  type              OrderType
+  status            OrderStatus        @default(PENDING_PAYMENT)
+  paymentStatus     OrderPaymentStatus @default(UNPAID)
+  preferredMethodId String?            @db.Uuid
+  preferredMethod   PaymentMethod?     @relation(fields: [preferredMethodId], references: [id], onDelete: Restrict)
+  quoteId           String?            @db.Uuid
+  quote             Quote?             @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  exchangeRateId    String             @db.Uuid
+  exchangeRate      ExchangeRate       @relation(fields: [exchangeRateId], references: [id], onDelete: Restrict)
+  rateValue         Decimal            @db.Decimal(20, 8)
+  subtotalCents     Int
+  totalCents        Int
+  totalVesCents     Int
+  /// Importe mínimo acreditado para confirmar la operación.
+  requiredCents     Int
+  paidCents         Int                @default(0)
+  balanceCents      Int
+  totalBoxes        Int
+  totalAreaUnits    Int
+  pickupDate        DateTime           @db.Date
+  rescheduleCount   Int                @default(0)
+  expiresAt         DateTime?
+  confirmedAt       DateTime?
+  readyAt           DateTime?
+  deliveredAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  contactName       String
+  contactPhone      String
+  customerNotes     String?
+  /// Condiciones comerciales vigentes al confirmar (copia histórica).
+  termsSnapshot     Json
+  idempotencyKey    String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  items         OrderItem[]
+  reservation   Reservation?
+  payments      Payment[]
+  events        OrderEvent[]
+  notes         OrderNote[]
+  movements     InventoryMovement[]
+  conversations Conversation[]
+
+  @@unique([customerId, idempotencyKey])
+  @@index([sellerId, status])
+  @@index([customerId, createdAt])
+  @@index([status, expiresAt])
+  @@index([pickupDate])
+  @@index([confirmedAt])
+}
+
+model OrderItem {
+  id                String       @id @default(uuid()) @db.Uuid
+  orderId           String       @db.Uuid
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String       @db.Uuid
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sku               String
+  productName       String
+  color             String
+  sizeLabel         String
+  boxAreaUnits      Int
+  piecesPerBox      Int
+  mode              QuantityMode
+  requestedQuantity String
+  boxes             Int
+  areaUnits         Int
+  priceBoxCents     Int
+  priceM2Cents      Int
+  lineTotalCents    Int
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Reservation {
+  id            String            @id @default(uuid()) @db.Uuid
+  orderId       String            @unique @db.Uuid
+  order         Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status        ReservationStatus @default(HELD)
+  pickupDate    DateTime          @db.Date
+  heldUntil     DateTime?
+  releasedAt    DateTime?
+  releaseReason String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([status, pickupDate])
+}
+
+/// Contador de capacidad de retiro por fecha (bloqueo optimista mediante actualización condicional).
+model PickupDay {
+  date      DateTime @id @db.Date
+  booked    Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model BlockedPickupDate {
+  date        DateTime @id @db.Date
+  reason      String
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id             String        @id @default(uuid()) @db.Uuid
+  orderId        String        @db.Uuid
+  order          Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  methodId       String        @db.Uuid
+  method         PaymentMethod @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  currency       Currency
+  amountCents    Int
+  /// Equivalente en USD acreditable, calculado con la tasa de la operación.
+  creditUsdCents Int
+  rateValue      Decimal       @db.Decimal(20, 8)
+  reference      String
+  /// Referencia normalizada (mayúsculas, sin espacios) para detectar duplicados.
+  referenceKey   String
+  paidAt         DateTime      @db.Date
+  payerName      String?
+  notes          String?
+  status         PaymentStatus @default(PENDING)
+  submittedById  String        @db.Uuid
+  submittedBy    User          @relation("PaymentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedById   String?       @db.Uuid
+  reviewedBy     User?         @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  idempotencyKey String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  proofs PaymentProof[]
+
+  @@unique([orderId, idempotencyKey])
+  @@index([status, createdAt])
+  @@index([methodId, referenceKey])
+}
+
+model PaymentProof {
+  id           String      @id @default(uuid()) @db.Uuid
+  paymentId    String      @db.Uuid
+  payment      Payment     @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  storageKey   String      @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  status       ProofStatus @default(PENDING)
+  uploadedById String      @db.Uuid
+  uploadedBy   User        @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime    @default(now())
+
+  @@index([paymentId])
+  @@index([sha256])
+}
+
+model OrderEvent {
+  id         String       @id @default(uuid()) @db.Uuid
+  orderId    String       @db.Uuid
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type       String
+  fromStatus OrderStatus?
+  toStatus   OrderStatus?
+  message    String
+  data       Json?
+  actorId    String?      @db.Uuid
+  actor      User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model OrderNote {
+  id        String        @id @default(uuid()) @db.Uuid
+  orderId   String        @db.Uuid
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind      OrderNoteKind
+  body      String
+  authorId  String        @db.Uuid
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt DateTime      @default(now())
+
+  @@index([orderId])
+}
+
+model Conversation {
+  id                 String             @id @default(uuid()) @db.Uuid
+  customerId         String             @db.Uuid
+  customer           CustomerProfile    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sellerId           String             @db.Uuid
+  seller             Seller             @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  orderId            String?            @db.Uuid
+  order              Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subject            String?
+  status             ConversationStatus @default(OPEN)
+  lastMessageAt      DateTime           @default(now())
+  customerLastReadAt DateTime?
+  sellerLastReadAt   DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  messages           Message[]
+
+  @@index([customerId, lastMessageAt])
+  @@index([sellerId, lastMessageAt])
+  @@index([orderId])
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String       @db.Uuid
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  data       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+model BusinessSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @db.Uuid
+  updatedAt   DateTime @updatedAt
+}
