@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import crypto from 'node:crypto';
 import { buildApp } from '../src/app';
@@ -140,7 +141,7 @@ export async function login(app: FastifyInstance, email: string, password = 'Pas
 export async function setSetting(key: string, patch: Record<string, unknown>) {
   const base = (SETTINGS_DEFAULTS as Record<string, object>)[key];
   const row = await prisma.businessSetting.findUnique({ where: { key } });
-  const value = { ...base, ...((row?.value as object) ?? {}), ...patch };
+  const value = { ...base, ...((row?.value as object) ?? {}), ...patch } as Prisma.InputJsonValue;
   await prisma.businessSetting.upsert({ where: { key }, create: { key, value }, update: { value } });
   invalidateSettings();
 }
