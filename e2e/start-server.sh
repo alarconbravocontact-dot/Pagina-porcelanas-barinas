@@ -6,6 +6,10 @@ ADMIN_URL="${E2E_ADMIN_DATABASE_URL:-postgresql://porcelana:porcelana@localhost:
 DB="porcelanas_e2e_$(date +%s)"
 BASE="${ADMIN_URL%/*}"
 export DATABASE_URL="$BASE/$DB?schema=public"
+# Elimina bases E2E de ejecuciones anteriores (Playwright puede terminar el proceso sin ejecutar el trap).
+for old in $(psql "$ADMIN_URL" -Atc "SELECT datname FROM pg_database WHERE datname LIKE 'porcelanas\_e2e\_%'"); do
+  psql "$ADMIN_URL" -qc "DROP DATABASE IF EXISTS \"$old\" WITH (FORCE)" >/dev/null || true
+done
 psql "$ADMIN_URL" -qc "CREATE DATABASE \"$DB\"" >/dev/null
 cleanup() { psql "$ADMIN_URL" -qc "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE)" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
