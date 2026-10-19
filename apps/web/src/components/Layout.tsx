@@ -5,6 +5,7 @@ import { useSession } from '../hooks/session';
 import { useCart, useSettings } from '../hooks/data';
 import { NotificationsBell } from './NotificationsBell';
 import { WhatsAppButton } from './WhatsAppButton';
+import { GuidedTour } from './GuidedTour';
 import { useEffect } from 'react';
 
 function Logo({ name }: { name: string }) {
@@ -165,6 +166,7 @@ export function Layout() {
       </main>
       <Footer storeName={storeName} />
       <WhatsAppButton variant="floating" />
+      <GuidedTour />
     </div>
   );
 }

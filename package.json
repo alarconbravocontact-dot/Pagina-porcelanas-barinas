@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "postinstall": "prisma generate --schema apps/api/prisma/schema.prisma",
     "user:activation-link": "npm run user:activation-link --workspace apps/api --",
-    "capture": "node e2e/capture/capture.mjs"
+    "capture": "node e2e/capture/capture.mjs",
+    "capture:tours": "node e2e/capture/tours.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

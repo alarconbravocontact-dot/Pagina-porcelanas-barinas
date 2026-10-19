@@ -39,7 +39,7 @@ export function ProductDetailPage() {
       </Link>
       <div className="mt-8 grid grid-cols-1 gap-14 lg:grid-cols-2">
         <div>
-          <div className="bg-stone-100 p-8 sm:p-14">
+          <div className="bg-stone-100 p-8 sm:p-14" data-tour="product-image">
             {img ? <img src={img.url} alt={img.alt} className="aspect-square w-full object-cover shadow-gallery" /> : <ProductImage product={p} className="aspect-square w-full" />}
           </div>
           {p.images.length > 1 && (
@@ -59,7 +59,7 @@ export function ProductDetailPage() {
           </div>
           <h1 className="mt-5 text-4xl sm:text-5xl">{p.name}</h1>
           <p className="mt-1 text-sm text-ink-muted">SKU {p.sku}</p>
-          <div className="mt-5 flex items-baseline gap-4">
+          <div className="mt-5 flex items-baseline gap-4" data-tour="product-price">
             <p className="font-display text-4xl font-light">
               {formatUSD(p.priceM2Cents)}
               <span className="font-sans text-sm text-ink-muted"> /m²</span>
@@ -71,10 +71,10 @@ export function ProductDetailPage() {
           </p>
           <p className="mt-1 text-xs text-ink-muted">{p.availableBoxes > 0 ? `${p.availableBoxes} cajas disponibles para reservar` : 'Sin existencias disponibles en este momento'}</p>
           {p.description && <p className="mt-5 whitespace-pre-line text-ink-soft">{p.description}</p>}
-          <div className="mt-6">
+          <div className="mt-6" data-tour="product-calculator">
             <Calculator product={p} />
           </div>
-          <div className="mt-8">
+          <div className="mt-8" data-tour="product-usage">
             <UsageGuide guide={p.usageGuide} rating={p.slipRating} note={p.finishNote} />
           </div>
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-stone-200 pt-6 text-sm">

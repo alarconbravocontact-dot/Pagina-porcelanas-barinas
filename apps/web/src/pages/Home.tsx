@@ -142,7 +142,7 @@ function Hero({ heroUrl, piece, tagline }: { heroUrl?: string; piece?: Product; 
     navigate(`/catalogo${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`);
   };
   return (
-    <section className="border-b border-stone-200">
+    <section className="border-b border-stone-200" data-tour="home-hero">
       <div className="container-page grid grid-cols-1 items-center gap-16 py-20 lg:grid-cols-12 lg:py-28">
         <div className="lg:col-span-5">
           <p className="eyebrow">Galería de porcelanatos · retiro en sede</p>

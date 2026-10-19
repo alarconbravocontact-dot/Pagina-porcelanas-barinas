@@ -41,7 +41,7 @@ export function AdminDashboard() {
           </div>
         }
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="admin-stats">
         <Stat label="Ventas (USD)" value={formatUSD(d.totals.salesUsdCents)} hint={`${d.totals.orders} operaciones confirmadas`} />
         <Stat label="m² vendidos" value={formatM2(d.totals.areaUnitsSold)} />
         <Stat label="Pagos por verificar" value={<Link to="/admin/pagos" className="hover:underline">{d.pendingPayments}</Link>} hint={`${d.pendingPaymentOrders} operaciones esperando pago`} />

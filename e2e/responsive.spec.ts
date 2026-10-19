@@ -18,3 +18,17 @@ test('menú móvil y filtros funcionan en pantallas pequeñas', async ({ page })
   await page.getByLabel('Solo con existencias disponibles').click();
   await expect(page).toHaveURL(/available=true/);
 });
+
+test('el recorrido guiado funciona en el teléfono', async ({ page }) => {
+  await page.goto('/catalogo');
+  await page.waitForLoadState('networkidle');
+  await page.getByTestId('tour-launcher').click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Filtros' })).toBeVisible();
+  const box = await dialog.boundingBox();
+  const width = page.viewportSize()!.width;
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});

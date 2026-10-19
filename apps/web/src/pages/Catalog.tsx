@@ -138,7 +138,7 @@ export function CatalogPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <WhatsAppButton message="Hola, estoy viendo el catálogo y quisiera asesoría." label="Asesoría por WhatsApp" />
-          <button type="button" className="btn-outline lg:hidden" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
+          <button type="button" className="btn-outline lg:hidden" data-tour="catalog-filters-toggle" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
             <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros {activeCount > 0 && `(${activeCount})`}
           </button>
           <label htmlFor="sort" className="sr-only">
@@ -168,7 +168,7 @@ export function CatalogPage() {
               {list.data.items.length === 0 ? (
                 <EmptyState title="No encontramos productos con esos filtros">Prueba con otros criterios o limpia los filtros.</EmptyState>
               ) : (
-                <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3" data-tour="catalog-grid">
                   {list.data.items.map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}

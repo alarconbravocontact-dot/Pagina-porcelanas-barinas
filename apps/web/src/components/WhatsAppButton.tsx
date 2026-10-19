@@ -26,6 +26,7 @@ export function WhatsAppButton({
         href={link}
         target="_blank"
         rel="noopener noreferrer"
+        data-tour="whatsapp-floating"
         className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-stone-300 bg-white text-ink shadow-gallery transition hover:border-ink"
         aria-label={label}
       >

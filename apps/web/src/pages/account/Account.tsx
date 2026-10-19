@@ -72,7 +72,7 @@ export function AccountHome() {
   const sellers = [...new Map(orders.data!.map((o) => [o.seller.id, o.seller])).values()];
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2" data-tour="account-active">
         <h2 className="text-xl">Operaciones activas</h2>
         {active.length === 0 ? (
           <div className="mt-4">
@@ -86,7 +86,7 @@ export function AccountHome() {
           </div>
         )}
       </div>
-      <aside className="space-y-4">
+      <aside className="space-y-4" data-tour="account-seller">
         {sellers.length === 0 ? (
           <div className="card p-5">
             <h2 className="text-lg">Tu vendedor</h2>
@@ -226,7 +226,7 @@ export function AccountOrderDetail() {
       )}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <section className="card p-5">
+          <section className="card p-5" data-tour="order-items">
             <h2 className="mb-3 text-lg">Productos</h2>
             <OrderItemsTable order={o} />
           </section>
@@ -260,7 +260,7 @@ export function AccountOrderDetail() {
             <OrderTimeline order={o} />
           </section>
         </div>
-        <aside className="space-y-6">
+        <aside className="space-y-6" data-tour="order-aside">
           <section className="card p-5">
             <PickupInfo order={o} />
             {o.reservation && (
@@ -446,7 +446,7 @@ export function AccountChat() {
   }, [id, convs.data, navigate]);
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-      <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`}>
+      <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`} data-tour="chat-list">
         <div className="border-b border-stone-200 p-4">
           <p className="text-sm font-semibold">Nueva conversación</p>
           <form

@@ -28,7 +28,7 @@ export function AdminSettings() {
   return (
     <div>
       <PageHeader title="Configuración comercial" subtitle="Políticas y datos administrables. Los cambios se auditan y no alteran operaciones ya confirmadas." />
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap gap-2" data-tour="settings-sections">
         {SECTIONS.map((s) => (
           <button key={s.key} type="button" className={section === s.key ? 'btn-primary btn-sm' : 'btn-outline btn-sm'} onClick={() => setSection(s.key)}>
             {s.label}

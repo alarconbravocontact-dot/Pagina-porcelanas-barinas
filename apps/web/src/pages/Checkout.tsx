@@ -298,7 +298,7 @@ function CheckoutForm() {
           </fieldset>
         </div>
 
-        <aside className="card h-fit p-5 lg:sticky lg:top-24">
+        <aside className="card h-fit p-5 lg:sticky lg:top-24" data-tour="checkout-review">
           <h2 className="text-lg">Revisión</h2>
           {quoteM.isPending && !quote && <Spinner label="Calculando…" />}
           {quoteM.isError && <ErrorState error={quoteM.error} onRetry={() => quoteM.mutate()} />}

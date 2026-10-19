@@ -51,7 +51,7 @@ export function StaffOrders() {
   return (
     <div>
       <PageHeader title={base === '/admin' ? 'Ventas y reservas' : 'Mis operaciones'} subtitle="Operaciones asignadas según sus permisos." />
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2" data-tour="staff-filters">
         <select className="input w-auto" value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })} aria-label="Estado">
           <option value="ACTIVE">Activas</option>
           <option value="">Todas</option>
@@ -162,7 +162,7 @@ export function StaffOrderDetail() {
       <Link to={base === '/admin' ? '/admin/operaciones' : '/vendedor'} className="text-sm text-ink-muted hover:text-ink">
         ← Volver
       </Link>
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-3" data-tour="staff-order-head">
         <div>
           <h1 className="font-mono text-2xl font-semibold">{o.code}</h1>
           <div className="mt-2">
@@ -379,7 +379,7 @@ export function StaffPayments() {
   return (
     <div>
       <PageHeader title="Revisión de comprobantes" subtitle="Verifique cada pago contra el banco o la plataforma antes de aprobarlo." />
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2" data-tour="payments-tabs">
         {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((s) => (
           <button key={s} type="button" className={s === status ? 'btn-primary btn-sm' : 'btn-outline btn-sm'} onClick={() => setStatus(s)}>
             {s === 'PENDING' ? 'Pendientes' : s === 'APPROVED' ? 'Aprobados' : 'Rechazados'}
@@ -389,7 +389,7 @@ export function StaffPayments() {
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
       {q.data?.length === 0 && <EmptyState title="No hay pagos en esta categoría" />}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-tour="payments-list">
         {q.data?.map((p) => (
           <div key={p.id} className="card p-4">
             <div className="flex items-center justify-between">
@@ -461,7 +461,7 @@ export function StaffPickups() {
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
       {q.data && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" data-tour="pickups-days">
           {days.map((d) => {
             const list = q.data.filter((o) => o.pickupDate === d);
             return (
@@ -510,7 +510,7 @@ export function StaffChat() {
     <div>
       <PageHeader title={user?.role === 'ADMIN' ? 'Conversaciones (supervisión)' : 'Atención al cliente'} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`}>
+        <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`} data-tour="chat-list">
           <div className="border-b border-stone-200 p-3">
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Estado">
               <option value="">Todas</option>
@@ -524,7 +524,7 @@ export function StaffChat() {
           {convs.data?.length === 0 && <p className="p-4 text-sm text-ink-muted">Sin conversaciones.</p>}
           {convs.data && <ConversationList items={convs.data} activeId={id} onSelect={(cid) => navigate(`${base}/chat/${cid}`)} perspective="staff" />}
         </div>
-        <div className={`card overflow-hidden ${id ? '' : 'hidden lg:block'}`}>
+        <div className={`card overflow-hidden ${id ? '' : 'hidden lg:block'}`} data-tour="chat-thread">
           {id ? (
             <>
               <div className="flex items-center justify-between gap-2 border-b border-stone-100 px-3 py-2">

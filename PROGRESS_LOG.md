@@ -81,3 +81,11 @@
 - El calendario de retiro solo ofrece días hábiles (lunes a viernes, 08:00–17:00); el servidor rechaza sábado y domingo.
 - Texto visible “Lunes a viernes, de 8:00 a. m. a 5:00 p. m.” en el pie de página, inicio, contacto, cómo comprar, el cartel de orden registrada y el detalle de la orden del cliente. Se carga al iniciar sin pisar un horario ya editado por el administrador (Configuración → Sede y Horarios de retiro).
 - Pruebas: shared 18/18, API 73/73, web 10/10, E2E 15/15.
+
+## 2026-10-19 — Recorrido guiado animado por ventana
+- **Tutorial dentro de la plataforma** para 28 ventanas: sitio público, orden de compra, área del cliente, panel del vendedor y administración. Un foco animado se desplaza de una zona a otra (el resto de la pantalla se oscurece) y una tarjeta explica cada parte con «Paso n de N», barra de progreso, Anterior/Siguiente, flechas del teclado y Esc.
+- Se inicia solo la primera vez que alguien abre cada ventana (después de que termina de cargar) y queda disponible con el botón «Recorrido» abajo a la izquierda. «No mostrar automáticamente» desactiva el inicio automático en ese navegador. Respeta «reducir movimiento».
+- Los pasos sin contenido visible (sin datos aún, vista móvil) se omiten; si no queda ninguno, se muestra un aviso (p. ej., carrito vacío). En móvil, el paso de filtros señala el botón «Filtros».
+- Bug evitado (detectado al probar): si se pulsaba el botón justo al cargar la ventana, el recorrido se cerraba solo.
+- Script `e2e/capture/tours.mjs` (`npm run capture:tours`) que captura cada paso de cada recorrido (89 pasos en escritorio y móvil, revisados uno por uno).
+- Pruebas: shared 18/18, API 73/73, web 13/13 (3 nuevas), E2E 18/18 (3 nuevas: botón y pasos, inicio automático y su desactivación, recorrido en el teléfono).

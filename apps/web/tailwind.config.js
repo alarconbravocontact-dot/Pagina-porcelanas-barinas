@@ -16,6 +16,14 @@ export default {
       },
       boxShadow: { card: 'none', gallery: '0 30px 60px -40px rgba(0,0,0,.25)' },
       letterSpacing: { gallery: '0.28em' },
+      keyframes: {
+        'tour-in': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'none' } },
+        'tour-ring': { '0%': { boxShadow: '0 0 0 0 rgba(255,255,255,.75)' }, '100%': { boxShadow: '0 0 0 14px rgba(255,255,255,0)' } },
+      },
+      animation: {
+        'tour-in': 'tour-in .45s cubic-bezier(.2,.7,.2,1) both',
+        'tour-ring': 'tour-ring 1.6s ease-out .5s 3',
+      },
     },
   },
   plugins: [],

@@ -25,14 +25,14 @@ export function CartPage() {
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-3">
+          <div className="space-y-3" data-tour="cart-items">
             {mutError && <Alert kind="error">{errorMessage(mutError)}</Alert>}
             {data.items.map((item) => (
               <CartRow key={item.id} item={item} busy={update.isPending || remove.isPending} onUpdate={(mode, quantity) => update.mutate({ id: item.id, mode, quantity })} onRemove={() => remove.mutate(item.id)} />
             ))}
           </div>
           {quote && (
-            <aside className="card h-fit p-5 lg:sticky lg:top-24">
+            <aside className="card h-fit p-5 lg:sticky lg:top-24" data-tour="cart-summary">
               <h2 className="text-lg">Resumen</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
