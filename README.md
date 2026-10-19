@@ -21,13 +21,25 @@ Más detalle: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Despliegue: [docs/
 cp .env.example .env              # complete DATABASE_URL y SEED_ADMIN_PASSWORD
 npm ci                            # instala dependencias (usa legacy-peer-deps desde .npmrc)
 npm run db:deploy                 # aplica migraciones (no destructivo)
-npm run db:seed                   # categorías, administrador y métodos de pago inactivos
-npm run db:seed:demo              # OPCIONAL: vendedores y productos de demostración (SKU DEMO-*)
+npm run db:seed                   # categorías, administrador, métodos de pago, vendedor Juan Alarcon y catálogo de Barinas
+npm run user:activation-link -- alarconbravocontact@gmail.com   # enlace de un solo uso para que Juan defina su contraseña
+npm run db:seed:demo              # OPCIONAL (solo pruebas): vendedores y productos de demostración (SKU DEMO-*)
 npm run dev                       # API en :4000 y web en :5173 (proxy a la API)
 ```
 Abra http://localhost:5173 e ingrese con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
 
-**Antes de vender**, el administrador debe: registrar la tasa BCV (Administración → Tasa BCV), escribir las instrucciones reales y activar los métodos de pago, crear vendedores, publicar productos con existencias y completar los datos de la sede, WhatsApp y políticas (Configuración).
+**Antes de vender**, el administrador debe:
+1. Registrar la tasa BCV (Administración → Tasa BCV).
+2. Completar los **datos de recepción** de cada método de pago (Administración → Métodos de pago). Mientras estén vacíos, el método aparece como “pendiente de configuración” y no se puede elegir ni usar para pagar. Efectivo está desactivado hasta que se habilite.
+3. Cargar las **existencias** de los productos del catálogo (Productos → Inventario → Entrada de mercancía): el catálogo PDF no las incluye y se importan en 0.
+4. Revisar los 5 productos importados en **borrador** (80×160 y 90×180): el catálogo indica 1,44 m² por caja, lo que no coincide con el tamaño de la pieza.
+5. Generar el enlace de activación de Juan Alarcon (Vendedores → “Generar enlace de activación” o el comando anterior).
+6. Completar dirección, horario y políticas de la sede (Configuración).
+
+### Datos del negocio incluidos
+- **Vendedor**: Juan Alarcon · Sede Barinas, Venezuela · +58 412-5552594 (WhatsApp `584125552594`) · alarconbravocontact@gmail.com · activo, con permiso para revisar pagos. La cuenta se crea **sin contraseña** y se activa con un enlace de un solo uso.
+- **Catálogo**: 72 productos de `CATALOGO_PORCELANATOS_BARINAS_guia_de_uso.pdf` (`apps/api/prisma/data/`), con precio por m² en divisas y precio BCV, formato, piezas y m² por caja, clasificación antideslizante, guía de uso por ambiente y 70 fotografías. Los SKU (`BRN-NN-ANCHOxLARGO`) son provisionales y editables. El color se deriva del nombre o, si no lo indica, del tono de la foto.
+- **Listas de precios**: la moneda del método de pago define el precio de la operación. Métodos en USD (Zelle, Binance, efectivo) → precio en divisas; métodos en Bs (Pago Móvil, transferencia) → precio BCV × tasa. Los pagos deben registrarse en la moneda de la lista elegida.
 
 ### Producción local (un solo proceso)
 ```bash

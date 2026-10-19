@@ -8,6 +8,7 @@ import { getAvailability } from '../services/pickup';
 import { createQuote } from '../services/quotes';
 import { getCurrentRate } from '../services/rates';
 import { getPublicSettings, getSettings } from '../services/settings';
+import { publicMethod } from '../services/paymentMethods';
 
 export async function publicRoutes(app: FastifyInstance) {
   app.get('/api/health', async () => {
@@ -39,16 +40,14 @@ export async function publicRoutes(app: FastifyInstance) {
     prisma.seller.findMany({
       where: { active: true, user: { active: true } },
       orderBy: { displayName: 'asc' },
-      select: { id: true, displayName: true, bio: true },
+      // Solo datos de contacto comercial que el vendedor publica; nunca el teléfono interno ni el usuario.
+      select: { id: true, displayName: true, bio: true, city: true, branch: true, publicPhone: true, whatsapp: true, publicEmail: true },
     }),
   );
 
+  /** Métodos activos con su estado de configuración (los no configurados se muestran deshabilitados). */
   app.get('/api/payment-methods', async () =>
-    prisma.paymentMethod.findMany({
-      where: { active: true },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      select: { id: true, kind: true, name: true, currency: true, instructions: true, requiresProof: true },
-    }),
+    (await prisma.paymentMethod.findMany({ where: { active: true }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] })).map(publicMethod),
   );
 
   app.get('/api/pickup/availability', async (req) => {

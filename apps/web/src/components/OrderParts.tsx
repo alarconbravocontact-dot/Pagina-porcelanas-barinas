@@ -1,13 +1,16 @@
 import type { Order } from '../lib/types';
 import { formatDateLong, formatDateTime, formatM2, formatRate, formatUSD, formatVES, ORDER_TYPE_LABELS } from '../lib/format';
-import { OrderPaymentBadge, OrderStatusBadge, PaymentStatusBadge } from './StatusBadges';
+import { OrderStatusBadge, PaymentReviewBadge, PaymentStatusBadge } from './StatusBadges';
+import { PRICE_LIST_LABELS } from '@porcelanas/shared';
 
 export function OrderHeader({ order }: { order: Order }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <OrderStatusBadge status={order.status} />
-      <OrderPaymentBadge status={order.paymentStatus} />
-      <span className="text-sm text-ink-muted">{ORDER_TYPE_LABELS[order.type]}</span>
+      <PaymentReviewBadge state={order.paymentReviewState} />
+      <span className="text-sm text-ink-muted">
+        {ORDER_TYPE_LABELS[order.type]} · {PRICE_LIST_LABELS[order.priceList]}
+      </span>
     </div>
   );
 }
@@ -51,13 +54,14 @@ export function OrderItemsTable({ order }: { order: Order }) {
 export function OrderAmounts({ order }: { order: Order }) {
   return (
     <dl className="space-y-1.5 text-sm">
-      <Row k="Total" v={<strong>{formatUSD(order.totalCents)}</strong>} />
+      <Row k={order.priceList === 'BCV' ? 'Total (precio BCV)' : 'Total (divisas)'} v={<strong>{formatUSD(order.totalCents)}</strong>} />
       <Row k="Equivalente en Bs" v={formatVES(order.totalVesCents)} />
       <Row k="Tasa aplicada (fijada)" v={`Bs. ${formatRate(order.rateValue)}`} />
       <Row k={order.type === 'PICKUP' ? 'Pago requerido' : 'Prepago mínimo'} v={formatUSD(order.requiredCents)} />
       <Row k="Acreditado" v={<span className="text-emerald-700">{formatUSD(order.paidCents)}</span>} />
       <Row k="Saldo pendiente" v={<strong className={order.balanceCents > 0 ? 'text-amber-800' : ''}>{formatUSD(order.balanceCents)}</strong>} />
       <Row k="Cajas / superficie" v={`${order.totalBoxes} · ${formatM2(order.totalAreaUnits)}`} />
+      <Row k="Método de pago elegido" v={order.preferredMethod?.name ?? '—'} />
     </dl>
   );
 }

@@ -67,6 +67,9 @@ export function Layout() {
             <NavLink to="/como-comprar" className={navCls}>
               Cómo comprar
             </NavLink>
+            <NavLink to="/contacto" className={navCls}>
+              Contacto
+            </NavLink>
             <NavLink to="/politicas" className={navCls}>
               Políticas
             </NavLink>
@@ -122,6 +125,9 @@ export function Layout() {
               </Link>
               <Link to="/como-comprar" className="rounded-none px-2 py-2 hover:bg-stone-100">
                 Cómo comprar
+              </Link>
+              <Link to="/contacto" className="rounded-none px-2 py-2 hover:bg-stone-100">
+                Contacto
               </Link>
               <Link to="/politicas" className="rounded-none px-2 py-2 hover:bg-stone-100">
                 Políticas
@@ -203,6 +209,11 @@ function Footer({ storeName }: { storeName: string }) {
             <li>
               <Link to="/cuenta" className="hover:text-ink">
                 Consultar mis operaciones
+              </Link>
+            </li>
+            <li>
+              <Link to="/contacto" className="hover:text-ink">
+                Contacto comercial
               </Link>
             </li>
           </ul>

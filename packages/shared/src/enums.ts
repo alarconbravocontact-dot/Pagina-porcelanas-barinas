@@ -131,3 +131,60 @@ export type ManualMovementType = (typeof MANUAL_MOVEMENT_TYPES)[number];
 
 export const RATE_SOURCES = ['BCV_AUTO', 'MANUAL'] as const;
 export type RateSource = (typeof RATE_SOURCES)[number];
+
+export const SLIP_RATINGS = ['R11', 'R10', 'MODERATE', 'MEDIUM_LOW', 'SLIPPERY'] as const;
+export type SlipRating = (typeof SLIP_RATINGS)[number];
+export const SLIP_RATING_LABELS: Record<SlipRating, string> = {
+  R11: 'Antideslizante alto R11',
+  R10: 'Antideslizante R10',
+  MODERATE: 'Antideslizante moderado',
+  MEDIUM_LOW: 'Agarre medio-bajo',
+  SLIPPERY: 'Resbaladizo',
+};
+export const SLIP_RATING_DESCRIPTIONS: Record<SlipRating, string> = {
+  R11: 'La opción más segura: piso de ducha, baños, terrazas, exteriores y bordes de piscina.',
+  R10: 'Agarre intermedio. Pisos interiores, cocinas, baños y terrazas techadas o exteriores con pendiente y drenaje. Ducha: mejor R11.',
+  MODERATE: 'Buen agarre en interiores. Apto para cocina y piso de baño. Para ducha o exterior descubierto, pedir ficha con R10–R11.',
+  MEDIUM_LOW: 'Menos brillo que el pulido, sin clase antideslizante declarada. Pisos interiores y paredes; en baño, con alfombra y lejos de la ducha.',
+  SLIPPERY: 'Brillo alto; mojado resbala. Ideal para salas, habitaciones y paredes. Evitar en piso de baño, ducha y exterior.',
+};
+
+export const USAGE_AREAS = ['salas', 'cocina', 'pisoBano', 'ducha', 'exterior', 'paredes'] as const;
+export type UsageArea = (typeof USAGE_AREAS)[number];
+export const USAGE_AREA_LABELS: Record<UsageArea, string> = {
+  salas: 'Salas',
+  cocina: 'Cocina',
+  pisoBano: 'Piso de baño',
+  ducha: 'Ducha',
+  exterior: 'Exterior',
+  paredes: 'Paredes',
+};
+export const USAGE_LEVELS = ['YES', 'CAUTION', 'NO'] as const;
+export type UsageLevel = (typeof USAGE_LEVELS)[number];
+export const USAGE_LEVEL_LABELS: Record<UsageLevel, string> = {
+  YES: 'Recomendado',
+  CAUTION: 'Con precaución o confirmar ficha técnica',
+  NO: 'No recomendado',
+};
+export type UsageGuide = Record<UsageArea, UsageLevel>;
+
+export const PRICE_LISTS = ['DIVISA', 'BCV'] as const;
+export type PriceList = (typeof PRICE_LISTS)[number];
+export const PRICE_LIST_LABELS: Record<PriceList, string> = {
+  DIVISA: 'Precio en divisas (pago en USD)',
+  BCV: 'Precio BCV (pago en bolívares)',
+};
+/** La moneda del método de pago determina la lista de precios de la operación. */
+export const priceListForCurrency = (currency: Currency): PriceList => (currency === 'VES' ? 'BCV' : 'DIVISA');
+export const currencyForPriceList = (list: PriceList): Currency => (list === 'BCV' ? 'VES' : 'USD');
+
+/** Estado de revisión visible para el comprador (distinto del método de pago elegido). */
+export const PAYMENT_REVIEW_STATES = ['AWAITING_PAYMENT', 'PROOF_RECEIVED', 'APPROVED', 'PARTIALLY_APPROVED', 'REJECTED'] as const;
+export type PaymentReviewState = (typeof PAYMENT_REVIEW_STATES)[number];
+export const PAYMENT_REVIEW_STATE_LABELS: Record<PaymentReviewState, string> = {
+  AWAITING_PAYMENT: 'Pago pendiente',
+  PROOF_RECEIVED: 'Comprobante recibido · en revisión',
+  APPROVED: 'Pago aprobado',
+  PARTIALLY_APPROVED: 'Pago parcial aprobado',
+  REJECTED: 'Pago rechazado',
+};

@@ -22,7 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
     <Link to={`/producto/${product.sku}`} className="group block">
       <div className="bg-stone-100 p-6 transition duration-500 group-hover:bg-stone-200/70 sm:p-8">
         <div className="relative aspect-square overflow-hidden shadow-gallery">
-          <ProductImage product={product} className={`h-full w-full transition duration-700 group-hover:scale-[1.03] ${product.stockStatus === 'OUT' ? 'grayscale opacity-70' : ''}`} />
+          <ProductImage product={product} className={`h-full w-full transition duration-700 group-hover:scale-[1.03] ${product.stockStatus === 'OUT' ? 'opacity-90' : ''}`} />
         </div>
       </div>
       <div className="mt-4 flex items-start justify-between gap-4">
@@ -37,7 +37,11 @@ export function ProductCard({ product }: { product: Product }) {
             {formatUSD(product.priceM2Cents)}
             <span className="text-ink-muted"> /m²</span>
           </p>
-          <p className="text-[11px] text-ink-muted">{formatUSD(product.priceBoxCents)} caja</p>
+          {product.hasBcvPrice ? (
+            <p className="text-[11px] text-ink-muted">BCV {formatUSD(product.priceBcvM2Cents)} /m²</p>
+          ) : (
+            <p className="text-[11px] text-ink-muted">{formatUSD(product.priceBoxCents)} caja</p>
+          )}
         </div>
       </div>
       <p className={`mt-2 text-[10px] uppercase tracking-gallery ${product.stockStatus === 'OUT' ? 'text-[#7a3030]' : 'text-ink-muted'}`}>

@@ -11,6 +11,7 @@ import { RateNotice } from '../components/RateNotice';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 import { EmptyState, ErrorState, Spinner } from '../components/ui';
 import { useFaq } from './HowToBuy';
+import { SellerContactCard } from '../components/SellerContact';
 
 interface Facets {
   categories: { id: string; name: string; slug: string; count: number }[];
@@ -266,22 +267,13 @@ function SellerSection() {
             <li>• Puedes consultar tu vendedor asignado en “Mi cuenta”.</li>
           </ul>
         </div>
-        <div className="border border-stone-200 bg-white p-8">
-          <p className="eyebrow">Vendedores disponibles</p>
+        <div className="space-y-4">
           {sellers.isLoading && <Spinner />}
           {sellers.isError && <ErrorState error={sellers.error} onRetry={() => sellers.refetch()} />}
-          {sellers.data?.length === 0 && <p className="mt-3 text-sm text-amber-800">En este momento no hay vendedores disponibles; no es posible confirmar operaciones.</p>}
-          <ul className="mt-3 divide-y divide-stone-100">
-            {sellers.data?.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 py-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 font-display text-lg text-ink-soft">{s.displayName.charAt(0)}</span>
-                <div>
-                  <p className="text-sm font-medium">{s.displayName}</p>
-                  {s.bio && <p className="text-xs text-ink-muted">{s.bio}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {sellers.data?.length === 0 && <p className="border border-stone-200 bg-white p-6 text-sm text-[#6b5a2e]">En este momento no hay vendedores disponibles; no es posible confirmar operaciones.</p>}
+          {sellers.data?.map((sl) => (
+            <SellerContactCard key={sl.id} seller={sl} title="Vendedor disponible" message="Hola, vi el catálogo de porcelanatos y quisiera asesoría." />
+          ))}
         </div>
       </div>
       </div>

@@ -36,3 +36,22 @@
 - Los textos legales, datos de la sede, WhatsApp, instrucciones de pago y la tasa deben ser cargados por el negocio.
 - `npm audit`: quedan advertencias solo en herramientas de desarrollo/compilación (`braces` vía Tailwind 3, `postcss-selector-parser`, `deepmerge-ts` vía CLI de Prisma 6). No forman parte del bundle del servidor ni del navegador; se resolverían migrando a Tailwind 4 y Prisma 7.
 - Paquete JS del frontend ~570 kB (165 kB gzip) sin división de código por rutas.
+
+## 2026-10-19 — Rediseño visual
+- Estética minimalista de galería de porcelana (blanco, grises fríos, Cormorant Garamond + Inter, cartelas de museo).
+
+## 2026-10-19 — Vendedor, métodos de pago y catálogo de Barinas
+- **Vendedor Juan Alarcon** registrado en la base de datos por la semilla idempotente (`ensureSeller`): usuario `alarconbravocontact@gmail.com` con rol vendedor, sede Barinas, WhatsApp `584125552594`, activo y con permiso de revisar pagos. Sin contraseña inventada: activación por enlace de un solo uso (nuevo modelo `UserToken`, página `/activar`, botón en Administración → Vendedores y comando `npm run user:activation-link`).
+- Datos del vendedor visibles en: inicio, página `/contacto`, selector y resumen del checkout, confirmación de la operación, área del cliente, detalle de la reserva, chat interno y botones de WhatsApp con contexto (producto y cantidad, carrito, número de operación y fecha de retiro). Correo como enlace `mailto:`.
+- Vendedor obligatorio validado en frontend y backend, con confirmación explícita (`sellerConfirmed`) y preselección si hay un único vendedor.
+- **Métodos de pago** con datos de recepción, texto adicional, requisitos de comprobante y orden. Pago Móvil, Zelle, Binance y transferencia se crean activos pero **sin datos de recepción** (no se inventaron cuentas): aparecen como “pendiente de configuración” y no se pueden usar. Efectivo, desactivado hasta que el administrador lo habilite.
+- Método elegido guardado en la operación y separado del estado del pago; estados visibles: pago pendiente, comprobante recibido, pago aprobado, pago rechazado.
+- **Catálogo importado del PDF** (72 productos, 70 fotos): precio en divisas y precio BCV, formato, caja, clasificación antideslizante y guía de uso por ambiente. 5 piezas grandes en borrador por inconsistencia de m² por caja. Existencias en 0 (no vienen en el catálogo). SKU provisionales.
+- **Listas de precios**: la moneda del método define si se aplica el precio en divisas o el precio BCV; la orden guarda la lista y la tasa.
+- Pruebas: shared 16/16, API 63/63 (8 nuevas en `test/business.test.ts`), web 6/6, E2E 16/16 (3 nuevas: datos y WhatsApp de Juan, ficha del catálogo con precio BCV y guía de uso, activación de cuenta por enlace).
+
+### Pendiente para el negocio
+- Datos de recepción reales de cada método de pago.
+- Existencias de cada producto; verificación de caja de las 5 piezas en borrador; SKU definitivos si se desea.
+- Activación de la cuenta de Juan (contraseña elegida por él).
+- Dirección, horario y políticas de la sede; tasa BCV del día.

@@ -30,8 +30,20 @@ import { fromDbDate, toDbDate } from '../services/pickup';
 import { fetchBcvRate, getCurrentRate, listRates, recordManualRate } from '../services/rates';
 import { dashboard } from '../services/reports';
 import { getSettings, updateSetting } from '../services/settings';
+import { isMethodConfigured } from '../services/paymentMethods';
+import { createActivationToken } from '../services/tokens';
+import { toWhatsappNumber } from '@porcelanas/shared';
 
 const MAX_PRODUCT_IMAGE = 8 * 1024 * 1024;
+
+/** El teléfono público genera el número internacional de WhatsApp (+58, sin el 0 inicial). */
+function sellerContact(input: { city?: string; branch?: string; publicPhone?: string; publicEmail?: string }) {
+  const publicPhone = input.publicPhone ?? '';
+  const whatsapp = publicPhone ? toWhatsappNumber(publicPhone) : '';
+  if (publicPhone && !whatsapp) throw badRequest('INVALID_PHONE', 'El teléfono público no tiene un formato válido para WhatsApp');
+  return { city: input.city ?? '', branch: input.branch ?? '', publicPhone, publicEmail: input.publicEmail ?? '', whatsapp: whatsapp ?? '' };
+}
+
 
 export async function adminRoutes(app: FastifyInstance) {
   // ---------------- Productos ----------------
@@ -168,9 +180,9 @@ export async function adminRoutes(app: FastifyInstance) {
     requirePermission(req, 'sellers:manage');
     const sellers = await prisma.seller.findMany({
       orderBy: { displayName: 'asc' },
-      include: { user: { select: { email: true, active: true, lastLoginAt: true } }, _count: { select: { orders: true } } },
+      include: { user: { select: { id: true, email: true, active: true, lastLoginAt: true, passwordHash: true } }, _count: { select: { orders: true } } },
     });
-    return sellers;
+    return sellers.map(({ user: { passwordHash, ...user }, ...s }) => ({ ...s, user: { ...user, pendingActivation: passwordHash === '' } }));
   });
 
   app.post('/api/admin/sellers', async (req, reply) => {
@@ -180,7 +192,8 @@ export async function adminRoutes(app: FastifyInstance) {
     const user = await prisma.user.create({
       data: {
         email: input.email,
-        passwordHash: await hashPassword(input.password),
+        // Sin contraseña: la cuenta queda pendiente y se activa con un enlace de un solo uso.
+        passwordHash: input.password ? await hashPassword(input.password) : '',
         role: 'SELLER',
         seller: {
           create: {
@@ -189,22 +202,35 @@ export async function adminRoutes(app: FastifyInstance) {
             phone: input.phone,
             canReviewPayments: input.canReviewPayments,
             canViewProofs: input.canViewProofs,
+            ...sellerContact(input),
           },
         },
       },
       include: { seller: true },
     });
-    await audit(req, 'seller.create', 'Seller', user.seller!.id, { email: input.email });
-    return reply.status(201).send(user.seller);
+    await audit(req, 'seller.create', 'Seller', user.seller!.id, { email: input.email, pendingActivation: !input.password });
+    return reply.status(201).send({ ...user.seller, pendingActivation: !input.password });
   });
 
   app.put<{ Params: { id: string } }>('/api/admin/sellers/:id', async (req) => {
     requirePermission(req, 'sellers:manage');
     const input = parse(sellerUpdateSchema, req.body);
-    const seller = await prisma.seller.update({ where: { id: req.params.id }, data: { ...input, bio: input.bio || null } });
+    const { city, branch, publicPhone, publicEmail, ...rest } = input;
+    const seller = await prisma.seller.update({
+      where: { id: req.params.id },
+      data: { ...rest, bio: input.bio || null, ...sellerContact({ city, branch, publicPhone, publicEmail }) },
+    });
     if (!input.active) await prisma.session.deleteMany({ where: { userId: seller.userId } });
     await audit(req, 'seller.update', 'Seller', seller.id, input);
     return seller;
+  });
+
+  /** Enlace de activación de un solo uso (el usuario define su propia contraseña). */
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/activation-link', async (req) => {
+    const auth = requirePermission(req, 'users:manage');
+    const r = await createActivationToken(req.params.id, auth.userId);
+    await audit(req, 'user.activation_link', 'User', req.params.id);
+    return { path: r.path, expiresInHours: r.expiresInHours, email: r.email };
   });
 
   // ---------------- Usuarios y roles ----------------
@@ -272,7 +298,8 @@ export async function adminRoutes(app: FastifyInstance) {
   // ---------------- Métodos de pago ----------------
   app.get('/api/admin/payment-methods', async (req) => {
     requirePermission(req, 'settings:manage');
-    return prisma.paymentMethod.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
+    const rows = await prisma.paymentMethod.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
+    return rows.map((m) => ({ ...m, configured: isMethodConfigured(m) }));
   });
   app.post('/api/admin/payment-methods', async (req, reply) => {
     requirePermission(req, 'settings:manage');

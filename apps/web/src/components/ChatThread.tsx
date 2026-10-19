@@ -8,6 +8,7 @@ import { formatDateTime, formatTime } from '../lib/format';
 import { useRealtime } from '../hooks/realtime';
 import { Alert, ErrorState, Spinner } from './ui';
 import { Link } from 'react-router-dom';
+import { WhatsAppButton } from './WhatsAppButton';
 
 interface MessagesResponse {
   conversation: Conversation;
@@ -104,7 +105,10 @@ export function ChatThread({ conversationId, orderLinkBase }: { conversationId: 
     <div className="flex h-[min(70vh,640px)] flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 px-4 py-3">
         <div>
-          <p className="font-medium">{side === 'customer' ? conv.seller.displayName : conv.customer.fullName}</p>
+          <p className="font-medium">
+            {side === 'customer' ? conv.seller.displayName : conv.customer.fullName}
+            {side === 'customer' && conv.seller.city && <span className="ml-2 text-xs font-normal text-ink-muted">Vendedor · {conv.seller.branch || conv.seller.city}</span>}
+          </p>
           <p className="text-xs text-ink-muted">
             {CONVERSATION_STATUS_LABELS[conv.status]}
             {conv.order && (
@@ -121,7 +125,12 @@ export function ChatThread({ conversationId, orderLinkBase }: { conversationId: 
             )}
           </p>
         </div>
-        <span className={`text-[11px] ${connected ? 'text-emerald-700' : 'text-ink-muted'}`}>{connected ? '● En línea' : 'Actualización periódica'}</span>
+        <span className="flex items-center gap-3 text-[11px]">
+          {side === 'customer' && conv.seller.whatsapp && (
+            <WhatsAppButton variant="link" number={conv.seller.whatsapp} label="WhatsApp" message={conv.order ? `Hola, te escribo por la operación ${conv.order.code}.` : 'Hola, te escribo desde el chat de la tienda.'} />
+          )}
+          <span className={connected ? 'text-emerald-700' : 'text-ink-muted'}>{connected ? '● En línea' : 'Actualización periódica'}</span>
+        </span>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto bg-stone-50 p-4" aria-live="polite">
         {messages.length === 0 && <p className="py-10 text-center text-sm text-ink-muted">Aún no hay mensajes.</p>}

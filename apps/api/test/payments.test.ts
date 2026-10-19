@@ -8,9 +8,9 @@ import { expireReservations } from '../src/services/orders';
 
 let s: Awaited<ReturnType<typeof scenario>>;
 
-async function newOrder(type: 'PICKUP' | 'PREPAY' = 'PICKUP', boxes = 10) {
+async function newOrder(type: 'PICKUP' | 'PREPAY' = 'PICKUP', boxes = 10, paymentMethodId?: string) {
   await s.customer.post('/api/cart/items', { productId: s.product.id, mode: 'BOXES', quantity: boxes });
-  const res = await checkout(s.customer, s, { type });
+  const res = await checkout(s.customer, s, { type, ...(paymentMethodId ? { paymentMethodId } : {}) });
   expect(res.statusCode).toBe(201);
   return res.json().order as { id: string; code: string; totalCents: number; requiredCents: number };
 }
@@ -155,7 +155,7 @@ describe('Bloque D — pagos, comprobantes y reservas', () => {
 
   it('prepago: confirma al alcanzar el mínimo y acredita pagos en Bs con la tasa de la operación', async () => {
     await setSetting('reservation', { prepayMinPercent: 30 });
-    const o = await newOrder('PREPAY'); // 270 USD, mínimo 81 USD
+    const o = await newOrder('PREPAY', 10, s.methodVes.id); // lista BCV: 270 USD, mínimo 81 USD
     // 2 956,50 Bs a 36,50 = 81,00 USD
     const r = await pay(o, { paymentMethodId: s.methodVes.id, currency: 'VES', amount: '2956.50', reference: 'PM-123' });
     expect(r.statusCode).toBe(201);

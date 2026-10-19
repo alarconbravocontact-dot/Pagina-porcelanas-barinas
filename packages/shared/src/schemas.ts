@@ -12,6 +12,8 @@ import {
   PRODUCT_STATUS,
   QUANTITY_MODES,
   ROLES,
+  SLIP_RATINGS,
+  USAGE_LEVELS,
 } from './enums';
 import { isValidDateString } from './dates';
 
@@ -75,7 +77,22 @@ export const productInputSchema = z.object({
   pricingBasis: z.enum(PRICING_BASIS),
   /** Precio en USD según la base de precio elegida (por m² o por caja). */
   price: moneyString,
+  /** Precio de referencia BCV en la misma base (m² o caja). Vacío = igual al precio en divisas. */
+  priceBcv: z.union([z.literal(''), moneyString]).nullable().optional(),
   finish: z.enum(FINISHES),
+  finishNote: trimmed(200).default(''),
+  slipRating: z.enum(SLIP_RATINGS).nullable().optional(),
+  usageGuide: z
+    .object({
+      salas: z.enum(USAGE_LEVELS),
+      cocina: z.enum(USAGE_LEVELS),
+      pisoBano: z.enum(USAGE_LEVELS),
+      ducha: z.enum(USAGE_LEVELS),
+      exterior: z.enum(USAGE_LEVELS),
+      paredes: z.enum(USAGE_LEVELS),
+    })
+    .nullable()
+    .optional(),
   antiSlip: z.enum(ANTISLIP),
   status: z.enum(PRODUCT_STATUS),
   featured: z.boolean().default(false),
@@ -91,6 +108,8 @@ export const catalogQuerySchema = z.object({
   category: trimmed(60).optional(),
   finish: z.enum(FINISHES).optional(),
   antiSlip: z.enum(ANTISLIP).optional(),
+  slip: z.enum(SLIP_RATINGS).optional(),
+  use: z.enum(['salas', 'cocina', 'pisoBano', 'ducha', 'exterior', 'paredes']).optional(),
   minPrice: moneyString.optional(),
   maxPrice: moneyString.optional(),
   available: z.enum(['true', 'false']).optional(),
@@ -133,6 +152,7 @@ export const cartItemUpdateSchema = quoteLineSchema.pick({ mode: true, quantity:
 export const checkoutSchema = z.object({
   quoteId: uuidSchema.optional(),
   sellerId: uuidSchema,
+  sellerConfirmed: z.literal(true, { errorMap: () => ({ message: 'Confirme el vendedor que lo atenderá en la sede' }) }),
   type: z.enum(ORDER_TYPES),
   pickupDate: dateSchema,
   paymentMethodId: uuidSchema,
@@ -168,6 +188,9 @@ export const paymentMethodInputSchema = z.object({
   name: trimmed(80).min(2),
   currency: z.enum(CURRENCIES),
   instructions: trimmed(3000).min(5, 'Escriba las instrucciones de pago'),
+  receivingDetails: trimmed(2000).default(''),
+  buyerNote: trimmed(1000).default(''),
+  proofInstructions: trimmed(1000).default(''),
   requiresProof: z.boolean(),
   active: z.boolean(),
   sortOrder: z.coerce.number().int().min(0).max(1000).default(0),
@@ -187,18 +210,29 @@ export const manualRateSchema = z.object({
 export const blockedDateSchema = z.object({ date: dateSchema, reason: trimmed(200).min(2) });
 
 // ---------- Vendedores y usuarios ----------
+/** Datos de contacto comercial públicos del vendedor (todos opcionales). */
+const sellerContactShape = {
+  city: trimmed(120).default(''),
+  branch: trimmed(120).default(''),
+  publicPhone: z.union([z.literal(''), phoneSchema]).default(''),
+  publicEmail: z.union([z.literal(''), z.string().trim().toLowerCase().email().max(160)]).default(''),
+};
+
 export const sellerCreateSchema = z.object({
   fullName: trimmed(120).min(3),
   displayName: trimmed(80).min(2),
   email: z.string().trim().toLowerCase().email().max(160),
   phone: phoneSchema,
-  password: passwordSchema,
+  /** Opcional: si se omite, la cuenta queda pendiente de activación por enlace. */
+  password: z.union([z.literal(''), passwordSchema]).optional(),
   canReviewPayments: z.boolean().default(false),
   canViewProofs: z.boolean().default(true),
+  ...sellerContactShape,
 });
 export const sellerUpdateSchema = z.object({
   displayName: trimmed(80).min(2),
   phone: phoneSchema,
+  ...sellerContactShape,
   active: z.boolean(),
   canReviewPayments: z.boolean(),
   canViewProofs: z.boolean(),
@@ -225,3 +259,8 @@ export const startConversationSchema = z.object({
 });
 export const sendMessageSchema = z.object({ body: trimmed(4000).min(1, 'Escriba un mensaje') });
 export const conversationStatusSchema = z.object({ status: z.enum(CONVERSATION_STATUS) });
+
+export const activationSchema = z.object({
+  token: z.string().trim().min(20).max(200),
+  password: passwordSchema,
+});

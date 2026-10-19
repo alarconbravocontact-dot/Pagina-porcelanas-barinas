@@ -14,6 +14,18 @@ import { OrderAmounts, OrderHeader, OrderItemsTable, OrderTimeline, PaymentsList
 import { PaymentForm, ReplaceProofForm } from '../../components/PaymentForm';
 import { ChatThread, ConversationList } from '../../components/ChatThread';
 import { WhatsAppButton } from '../../components/WhatsAppButton';
+import { SellerContactCard } from '../../components/SellerContact';
+import { MethodInstructions } from '../Checkout';
+import { PAYMENT_REVIEW_STATE_LABELS } from '@porcelanas/shared';
+
+const RESERVATION_LABELS: Record<string, string> = {
+  HELD: 'apartada, pendiente del pago requerido',
+  CONFIRMED: 'confirmada hasta la fecha de retiro',
+  FULFILLED: 'entregada',
+  RELEASED: 'liberada',
+};
+
+const orderWaMessage = (o: Order) => `Hola, te escribo por mi operación ${o.code} con retiro el ${formatShortDate(o.pickupDate)}.`;
 import { NotFoundPage } from '../NotFound';
 
 export function AccountLayout() {
@@ -73,30 +85,24 @@ export function AccountHome() {
         )}
       </div>
       <aside className="space-y-4">
-        <div className="card p-5">
-          <h2 className="text-lg">Tu vendedor</h2>
-          {sellers.length === 0 ? (
+        {sellers.length === 0 ? (
+          <div className="card p-5">
+            <h2 className="text-lg">Tu vendedor</h2>
             <p className="mt-2 text-sm text-ink-muted">Seleccionarás tu vendedor al confirmar tu primera compra.</p>
-          ) : (
-            <ul className="mt-2 space-y-2 text-sm">
-              {sellers.map((s) => (
-                <li key={s.id} className="flex items-center justify-between">
-                  <span>{s.displayName}</span>
-                  <Link to="/cuenta/chat" className="text-ink underline-offset-4 hover:underline">
-                    Escribir
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="card p-5">
-          <h2 className="text-lg">¿Necesitas ayuda?</h2>
-          <p className="mt-1 text-sm text-ink-muted">Escribe a tu vendedor por el chat o contáctanos.</p>
-          <div className="mt-3">
-            <WhatsAppButton />
+            <Link to="/contacto" className="btn-outline btn-sm mt-3">
+              Ver vendedores
+            </Link>
           </div>
-        </div>
+        ) : (
+          sellers.map((s) => (
+            <div key={s.id}>
+              <SellerContactCard seller={s} title="Tu vendedor asignado" message="Hola, te escribo por mis compras en la tienda de porcelanatos." />
+              <Link to="/cuenta/chat" className="btn-ghost btn-sm mt-1">
+                Abrir chat interno
+              </Link>
+            </div>
+          ))
+        )}
       </aside>
     </div>
   );
@@ -115,6 +121,7 @@ function OrderCard({ order }: { order: Order }) {
       <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm text-ink-muted">
         <span>
           {ORDER_TYPE_LABELS[order.type]} · retiro {formatShortDate(order.pickupDate)} · vendedor {order.seller.displayName}
+          {order.preferredMethod && ` · ${order.preferredMethod.name}`} · {PAYMENT_REVIEW_STATE_LABELS[order.paymentReviewState]}
         </span>
         <span className="font-medium text-ink">
           {formatUSD(order.totalCents)} {order.balanceCents > 0 && <span className="text-amber-800">(saldo {formatUSD(order.balanceCents)})</span>}
@@ -157,7 +164,7 @@ export function AccountOrderDetail() {
     <div>
       {params.get('nueva') && (
         <Alert kind="success" title={`Operación ${o.code} generada`} className="mb-6">
-          Tu mercancía quedó apartada. Registra tu pago con el comprobante para que el equipo lo verifique. Tu vendedor asignado es {o.seller.displayName}.
+          Tu mercancía quedó apartada para retirar el {formatShortDate(o.pickupDate)}. Vendedor responsable: {o.seller.displayName}. Método elegido: {o.preferredMethod?.name ?? '—'} (aún sin pago registrado). Realiza el pago y adjunta el comprobante abajo para su verificación.
         </Alert>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -170,7 +177,7 @@ export function AccountOrderDetail() {
         </div>
         <div className="flex flex-wrap gap-2">
           <OrderChatButton order={o} />
-          <WhatsAppButton message={`Hola, consulto por mi operación ${o.code}.`} label="WhatsApp" />
+          <WhatsAppButton number={o.seller.whatsapp} message={orderWaMessage(o)} label="WhatsApp" />
         </div>
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -179,6 +186,16 @@ export function AccountOrderDetail() {
             <h2 className="mb-3 text-lg">Productos</h2>
             <OrderItemsTable order={o} />
           </section>
+          {o.preferredMethod && (
+            <section className="card p-5">
+              <h2 className="text-lg">Método de pago elegido</h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                {o.preferredMethod.name} · {o.priceList === 'BCV' ? 'precio BCV, pago en bolívares' : 'precio en divisas, pago en dólares'}. Estado del pago:{' '}
+                <strong>{PAYMENT_REVIEW_STATE_LABELS[o.paymentReviewState]}</strong>.
+              </p>
+              {active && o.balanceCents > 0 && <MethodInstructions method={o.preferredMethod} />}
+            </section>
+          )}
           {active && o.balanceCents > 0 && (
             <section className="card p-5" id="pagar">
               <h2 className="text-lg">Registrar un pago</h2>
@@ -202,9 +219,13 @@ export function AccountOrderDetail() {
         <aside className="space-y-6">
           <section className="card p-5">
             <PickupInfo order={o} />
-            <p className="mt-4 text-xs uppercase tracking-wide text-ink-muted">Vendedor asignado</p>
-            <p className="mt-1 font-medium">{o.seller.displayName}</p>
+            {o.reservation && (
+              <p className="mt-2 text-xs text-ink-muted">
+                Reserva: {RESERVATION_LABELS[o.reservation.status] ?? o.reservation.status}
+              </p>
+            )}
           </section>
+          <SellerContactCard seller={o.seller} title="Vendedor responsable" message={orderWaMessage(o)} />
           <section className="card p-5">
             <h2 className="mb-3 text-lg">Importes</h2>
             <OrderAmounts order={o} />

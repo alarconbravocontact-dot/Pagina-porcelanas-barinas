@@ -10,12 +10,12 @@ describe('Indicadores', () => {
 
   it('calcula ventas, m², ventas por vendedor y cobros sin mezclar monedas', async () => {
     const seller2 = await createUser('SELLER', 'v2@test.local');
-    const mk = async (sellerId: string, boxes: number) => {
+    const mk = async (sellerId: string, boxes: number, paymentMethodId = s.methodUsd.id) => {
       await s.customer.post('/api/cart/items', { productId: s.product.id, mode: 'BOXES', quantity: boxes });
-      return (await checkout(s.customer, { ...s, seller: { id: sellerId } })).json().order;
+      return (await checkout(s.customer, { ...s, seller: { id: sellerId } }, { paymentMethodId })).json().order;
     };
     const o1 = await mk(s.seller.id, 10); // 270 USD
-    const o2 = await mk(seller2.seller!.id, 2); // 54 USD
+    const o2 = await mk(seller2.seller!.id, 2, s.methodVes.id); // 54 USD, lista BCV (pago en Bs)
     await mk(s.seller.id, 1); // queda pendiente: no es venta
     await s.admin.post(`/api/staff/orders/${o1.id}/payments`, { paymentMethodId: s.methodUsd.id, amount: '270', currency: 'USD', reference: 'U-1', paidAt: s.today }, { 'idempotency-key': idem() });
     // 1 971 Bs a 36,50 = 54 USD

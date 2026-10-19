@@ -44,15 +44,21 @@ export function CartPage() {
                   <dd>{formatM2(quote.totalAreaUnits)}</dd>
                 </div>
                 <div className="flex justify-between border-t border-stone-100 pt-2 text-base">
-                  <dt className="font-medium">Subtotal</dt>
+                  <dt className="font-medium">Pagando en divisas</dt>
                   <dd className="font-semibold">{formatUSD(quote.subtotalCents)}</dd>
                 </div>
+                {quote.subtotalBcvCents !== quote.subtotalCents && (
+                  <div className="flex justify-between">
+                    <dt className="text-ink-muted">Precio BCV (pago en Bs)</dt>
+                    <dd>{formatUSD(quote.subtotalBcvCents)}</dd>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <dt className="text-ink-muted">Tasa BCV</dt>
                   <dd>{quote.rate ? `Bs. ${formatRate(quote.rate.rate)}` : 'No registrada'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-muted">Equivalente</dt>
+                  <dt className="text-ink-muted">Pagando en bolívares</dt>
                   <dd>{quote.totalVesCents != null ? formatVES(quote.totalVesCents) : '—'}</dd>
                 </div>
               </dl>
@@ -74,7 +80,7 @@ export function CartPage() {
 
 function cartMessage(cart: CartView) {
   const lines = cart.items.map((i) => `• ${i.line.name} (${i.line.sku}): ${i.line.boxes} cajas`).join('\n');
-  return `Hola, quisiera consultar este pedido:\n${lines}`;
+  return `Hola, quisiera consultar este pedido:\n${lines}\nTotal en divisas: ${formatUSD(cart.quote?.subtotalCents ?? 0)}`;
 }
 
 function CartRow({ item, onUpdate, onRemove, busy }: { item: CartView['items'][number]; onUpdate: (mode: 'BOXES' | 'M2', q: string) => void; onRemove: () => void; busy: boolean }) {

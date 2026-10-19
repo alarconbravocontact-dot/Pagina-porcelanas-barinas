@@ -17,7 +17,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace packages/shared && npm run test --workspace apps/api && npm run test --workspace apps/web",
     "test:e2e": "playwright test",
-    "postinstall": "prisma generate --schema apps/api/prisma/schema.prisma"
+    "postinstall": "prisma generate --schema apps/api/prisma/schema.prisma",
+    "user:activation-link": "npm run user:activation-link --workspace apps/api --"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

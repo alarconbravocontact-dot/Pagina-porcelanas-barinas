@@ -2,10 +2,23 @@ import { MessageCircle } from 'lucide-react';
 import { whatsappLink } from '@porcelanas/shared';
 import { useSettings } from '../hooks/data';
 
-/** Botón comercial de WhatsApp. No se muestra si el número no está configurado. */
-export function WhatsAppButton({ message, variant = 'inline', label = 'Consultar por WhatsApp' }: { message?: string; variant?: 'inline' | 'floating'; label?: string }) {
+/**
+ * Acceso directo a WhatsApp con mensaje prellenado. Usa el número del vendedor si se indica;
+ * si no, el número comercial configurado. No se muestra si no hay número.
+ */
+export function WhatsAppButton({
+  message,
+  number,
+  variant = 'inline',
+  label = 'Consultar por WhatsApp',
+}: {
+  message?: string;
+  number?: string | null;
+  variant?: 'inline' | 'floating' | 'link';
+  label?: string;
+}) {
   const { data } = useSettings();
-  const link = whatsappLink(data?.whatsapp.number, message ?? data?.whatsapp.greeting ?? '');
+  const link = whatsappLink(number || data?.whatsapp.number, message ?? data?.whatsapp.greeting ?? '');
   if (!link) return null;
   if (variant === 'floating') {
     return (
@@ -20,8 +33,15 @@ export function WhatsAppButton({ message, variant = 'inline', label = 'Consultar
       </a>
     );
   }
+  if (variant === 'link') {
+    return (
+      <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4 hover:text-ink-soft">
+        <MessageCircle className="h-3.5 w-3.5" aria-hidden /> {label}
+      </a>
+    );
+  }
   return (
-    <a href={link} target="_blank" rel="noopener noreferrer" className="btn-outline">
+    <a href={link} target="_blank" rel="noopener noreferrer" className="btn-outline" data-testid="whatsapp-link">
       <MessageCircle className="h-4 w-4" aria-hidden /> {label}
     </a>
   );

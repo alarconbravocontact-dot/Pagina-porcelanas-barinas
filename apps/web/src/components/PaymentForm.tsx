@@ -23,8 +23,11 @@ export function PaymentForm({ order }: { order: Order }) {
   const methods = usePaymentMethods();
   const { data: settings } = useSettings();
   const maxMB = settings?.uploads.maxProofMB ?? 5;
-  const [methodId, setMethodId] = useState(order.preferredMethod?.id ?? '');
-  const method = methods.data?.find((m) => m.id === methodId);
+  // Solo métodos de la moneda de la lista de precios de la operación (USD ↔ divisas, Bs ↔ BCV).
+  const listCurrency = order.priceList === 'BCV' ? 'VES' : 'USD';
+  const usable = methods.data?.filter((m) => m.available && m.currency === listCurrency) ?? [];
+  const [methodId, setMethodId] = useState(order.preferredMethod?.available ? order.preferredMethod.id : '');
+  const method = usable.find((m) => m.id === methodId);
   const suggestedUsd = order.paidCents < order.requiredCents ? order.requiredCents - order.paidCents : order.balanceCents;
   const suggested = method?.currency === 'VES' ? usdCentsToVesCents(suggestedUsd, order.rateValue) : suggestedUsd;
   const [amount, setAmount] = useState('');
@@ -76,21 +79,26 @@ export function PaymentForm({ order }: { order: Order }) {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      {done && <Alert kind="success" title="Pago registrado">Lo verificaremos manualmente y te notificaremos el resultado. Registrar un comprobante no confirma el pago.</Alert>}
+      {done && <Alert kind="success" title="Comprobante recibido">Queda en revisión: el vendedor o la administración lo verificarán y te notificaremos el resultado. Recibir el comprobante no confirma el pago.</Alert>}
       {m.isError && <Alert kind="error">{errorMessage(m.error)}</Alert>}
       <Field label="Método de pago" htmlFor="pf-method" error={fields.paymentMethodId}>
         <select id="pf-method" className="input" value={methodId} onChange={(e) => setMethodId(e.target.value)}>
           <option value="">Seleccione…</option>
-          {methods.data?.map((x) => (
+          {usable.map((x) => (
             <option key={x.id} value={x.id}>
               {x.name} ({x.currency === 'VES' ? 'Bs' : 'USD'})
             </option>
           ))}
         </select>
       </Field>
+      {methods.data && usable.length === 0 && (
+        <Alert kind="warning">No hay métodos en {listCurrency === 'VES' ? 'bolívares' : 'dólares'} configurados en este momento. Escribe a tu vendedor.</Alert>
+      )}
       {method && (
         <div className="rounded-none bg-stone-50 p-3 text-sm">
           <p className="whitespace-pre-line text-ink-soft">{method.instructions}</p>
+          {method.receivingDetails && <p className="mt-2 whitespace-pre-line font-normal text-ink">{method.receivingDetails}</p>}
+          {method.buyerNote && <p className="mt-1 text-xs text-ink-soft">{method.buyerNote}</p>}
           <p className="mt-2 text-xs text-ink-muted">
             Importe sugerido: <strong>{method.currency === 'VES' ? formatVES(suggested) : formatUSD(suggested)}</strong>
             {method.currency === 'VES' && ' (calculado con la tasa fijada en su operación)'}

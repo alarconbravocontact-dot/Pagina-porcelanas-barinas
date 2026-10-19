@@ -114,3 +114,14 @@ describe('whatsapp', () => {
     expect(whatsappLink('584120000000', 'hola mundo')).toBe('https://wa.me/584120000000?text=hola%20mundo');
   });
 });
+
+describe('formato de WhatsApp venezolano', () => {
+  it('convierte el número nacional al formato internacional sin el cero inicial', async () => {
+    const { toWhatsappNumber, formatInternationalPhone } = await import('../src/whatsapp');
+    expect(toWhatsappNumber('04125552594')).toBe('584125552594');
+    expect(toWhatsappNumber('0412-555 2594')).toBe('584125552594');
+    expect(toWhatsappNumber('+58 412 5552594')).toBe('584125552594');
+    expect(toWhatsappNumber('abc')).toBeNull();
+    expect(formatInternationalPhone('584125552594')).toBe('+58 412-5552594');
+  });
+});

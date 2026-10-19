@@ -7,6 +7,7 @@ import { storage, type ValidatedImage } from '../lib/storage';
 import { adminUserIds, notify, sellerUserId } from './notifications';
 import { ACTIVE_STATUSES, recalcPayments, staffScope } from './orders';
 import { toDbDate } from './pickup';
+import { isMethodConfigured } from './paymentMethods';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config } from '../config';
@@ -50,6 +51,19 @@ export async function submitPayment(
   if (!method || !method.active) throw new AppError(422, 'PAYMENT_METHOD_INVALID', 'Método de pago no disponible');
   if (method.currency !== input.currency) {
     throw badRequest('CURRENCY_MISMATCH', `El método ${method.name} se registra en ${method.currency}`);
+  }
+  if (!opts.staffApproved && !isMethodConfigured(method)) {
+    throw new AppError(422, 'PAYMENT_METHOD_NOT_CONFIGURED', `El método ${method.name} aún no tiene sus datos de pago configurados`);
+  }
+  // Los importes de la operación están en la lista de precios elegida: USD (divisas) o Bs (precio BCV).
+  const expectedCurrency = order.priceList === 'BCV' ? 'VES' : 'USD';
+  if (method.currency !== expectedCurrency) {
+    throw badRequest(
+      'PRICE_LIST_MISMATCH',
+      order.priceList === 'BCV'
+        ? 'Esta operación se cotizó con el precio BCV: registre el pago con un método en bolívares.'
+        : 'Esta operación se cotizó con el precio en divisas: registre el pago con un método en dólares.',
+    );
   }
   if (method.requiresProof && !file && !opts.staffApproved) {
     throw badRequest('PROOF_REQUIRED', 'Debe adjuntar el comprobante de pago');

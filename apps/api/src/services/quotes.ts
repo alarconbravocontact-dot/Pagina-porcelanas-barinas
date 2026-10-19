@@ -28,6 +28,10 @@ export interface QuoteLine {
   priceBoxCents: number;
   priceM2Cents: number;
   lineTotalCents: number;
+  /** Precio y total de referencia BCV (USD) para pagos en bolívares. */
+  priceBcvBoxCents: number;
+  priceBcvM2Cents: number;
+  lineTotalBcvCents: number;
   availableBoxes: number;
   stockOk: boolean;
   error: string | null;
@@ -36,6 +40,7 @@ export interface QuoteLine {
 export interface QuoteResult {
   lines: QuoteLine[];
   subtotalCents: number;
+  subtotalBcvCents: number;
   totalBoxes: number;
   totalAreaUnits: number;
   rate: RateStatus | null;
@@ -87,6 +92,9 @@ export async function computeQuote(requests: LineRequest[], opts: { strict: bool
         priceBoxCents: 0,
         priceM2Cents: 0,
         lineTotalCents: 0,
+        priceBcvBoxCents: 0,
+        priceBcvM2Cents: 0,
+        lineTotalBcvCents: 0,
         availableBoxes: 0,
         stockOk: false,
         error: 'Este producto ya no está disponible',
@@ -95,6 +103,7 @@ export async function computeQuote(requests: LineRequest[], opts: { strict: bool
     }
     const qty = normalizeQuantity(req.mode, req.quantity);
     const line = computeLine({ mode: req.mode, quantity: qty, boxAreaUnits: p.boxAreaUnits, priceBoxCents: p.priceBoxCents });
+    const bcvLine = computeLine({ mode: req.mode, quantity: qty, boxAreaUnits: p.boxAreaUnits, priceBoxCents: p.priceBcvBoxCents ?? p.priceBoxCents });
     const available = Math.max(0, (p.inventory?.onHandBoxes ?? 0) - (p.inventory?.reservedBoxes ?? 0));
     const stockOk = line.boxes <= available;
     lines.push({
@@ -113,6 +122,9 @@ export async function computeQuote(requests: LineRequest[], opts: { strict: bool
       priceBoxCents: line.priceBoxCents,
       priceM2Cents: line.priceM2Cents,
       lineTotalCents: line.lineTotalCents,
+      priceBcvBoxCents: bcvLine.priceBoxCents,
+      priceBcvM2Cents: p.priceBcvM2Cents ?? p.priceM2Cents,
+      lineTotalBcvCents: bcvLine.lineTotalCents,
       availableBoxes: available,
       stockOk,
       error: stockOk ? null : `Solo hay ${available} cajas disponibles`,
@@ -120,14 +132,17 @@ export async function computeQuote(requests: LineRequest[], opts: { strict: bool
   }
   const valid = lines.every((l) => !l.error);
   const subtotalCents = lines.reduce((a, l) => a + l.lineTotalCents, 0);
+  const subtotalBcvCents = lines.reduce((a, l) => a + l.lineTotalBcvCents, 0);
   const rate = await getCurrentRate();
   return {
     lines,
     subtotalCents,
+    subtotalBcvCents,
     totalBoxes: lines.reduce((a, l) => a + l.boxes, 0),
     totalAreaUnits: lines.reduce((a, l) => a + l.areaUnits, 0),
     rate,
-    totalVesCents: rate ? usdCentsToVesCents(subtotalCents, rate.rate) : null,
+    // El equivalente en Bs se calcula con el precio de referencia BCV.
+    totalVesCents: rate ? usdCentsToVesCents(subtotalBcvCents, rate.rate) : null,
     valid,
   };
 }
@@ -152,6 +167,8 @@ export async function createQuote(requests: LineRequest[], userId: string | null
         boxes: l.boxes,
         priceBoxCents: l.priceBoxCents,
         lineTotalCents: l.lineTotalCents,
+        priceBcvBoxCents: l.priceBcvBoxCents,
+        lineTotalBcvCents: l.lineTotalBcvCents,
       })) as Prisma.InputJsonValue,
     },
   });
@@ -165,6 +182,8 @@ export interface StoredQuoteLine {
   boxes: number;
   priceBoxCents: number;
   lineTotalCents: number;
+  priceBcvBoxCents?: number;
+  lineTotalBcvCents?: number;
 }
 
 /** Comprueba que una cotización guardada coincide exactamente con el cálculo actual. */
@@ -179,7 +198,9 @@ export function quoteMatches(stored: StoredQuoteLine[], current: QuoteLine[]): b
       c.requestedQuantity === s.quantity &&
       c.boxes === s.boxes &&
       c.priceBoxCents === s.priceBoxCents &&
-      c.lineTotalCents === s.lineTotalCents
+      c.lineTotalCents === s.lineTotalCents &&
+      c.priceBcvBoxCents === (s.priceBcvBoxCents ?? s.priceBoxCents) &&
+      c.lineTotalBcvCents === (s.lineTotalBcvCents ?? s.lineTotalCents)
     );
   });
 }

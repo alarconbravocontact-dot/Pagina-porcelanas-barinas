@@ -60,9 +60,15 @@ test.describe.serial('flujo completo de compra', () => {
     await page.getByRole('button', { name: 'Confirmar operación' }).click();
     await expect(page.getByText('Seleccione el vendedor que lo atenderá en la sede')).toBeVisible();
     await page.getByRole('radio', { name: /Ana \(demo\)/ }).check();
+    await page.getByRole('button', { name: 'Confirmar operación' }).click();
+    await expect(page.getByText('Confirme el vendedor que lo atenderá en la sede')).toBeVisible();
+    await page.getByLabel(/Confirmo que Ana \(demo\) me atenderá/).check();
     await page.locator('[role="radiogroup"][aria-label="Fecha de retiro"] button:not([disabled])').nth(1).click();
     await page.getByRole('radio', { name: /Zelle/ }).check();
-    await expect(page.getByText('Instrucciones de Zelle')).toBeVisible();
+    await expect(page.getByText('Cómo pagar con Zelle')).toBeVisible();
+    await expect(page.getByText('Datos de recepción', { exact: true })).toBeVisible();
+    // Métodos sin datos de recepción se muestran deshabilitados.
+    await expect(page.getByRole('radio', { name: 'Efectivo en sede' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Confirmar operación' }).click();
     await page.waitForURL(/\/cuenta\/operaciones\/PC-/);
     code = page.url().split('/').pop()!.split('?')[0]!;
@@ -75,7 +81,8 @@ test.describe.serial('flujo completo de compra', () => {
     await page.getByLabel('Referencia de la operación').fill(`ZL-${Date.now()}`);
     await page.getByLabel('Comprobante').setInputFiles({ name: 'pago.png', mimeType: 'image/png', buffer: PNG });
     await page.getByRole('button', { name: 'Registrar pago' }).click();
-    await expect(page.getByText('Pago registrado')).toBeVisible();
+    await expect(page.getByText('Comprobante recibido', { exact: true })).toBeVisible();
+    await expect(page.getByText('Comprobante recibido · en revisión').first()).toBeVisible();
     await expect(page.getByText('Pendiente de verificación').first()).toBeVisible();
     await expect(page.getByText('Pendiente de pago').first()).toBeVisible();
     // Persistencia: recargar mantiene la operación.
@@ -124,4 +131,51 @@ test('recuperación ante errores de la API', async ({ page }) => {
 test('una ruta inexistente muestra la página 404', async ({ page }) => {
   await page.goto('/no-existe');
   await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toBeVisible();
+});
+
+test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
+  test('aparece con sus datos y WhatsApp en el inicio, contacto y checkout', async ({ page }) => {
+    await page.goto('/');
+    const card = page.locator('div', { has: page.getByText('Juan Alarcon', { exact: true }) }).filter({ hasText: 'alarconbravocontact@gmail.com' }).last();
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('link', { name: 'alarconbravocontact@gmail.com' })).toHaveAttribute('href', 'mailto:alarconbravocontact@gmail.com');
+    await expect(card.getByRole('link', { name: /WhatsApp de Juan/ })).toHaveAttribute('href', /^https:\/\/wa\.me\/584125552594\?text=/);
+    await expect(card.getByText('+58 412-5552594')).toBeVisible();
+    await page.goto('/contacto');
+    await expect(page.getByText('Sede Barinas, Venezuela')).toBeVisible();
+  });
+
+  test('las piezas del catálogo muestran precio en divisas, precio BCV y guía de uso', async ({ page }) => {
+    await page.goto('/catalogo?use=ducha');
+    await expect(page.getByText('3 productos')).toBeVisible();
+    await page.goto('/producto/BRN-01-60X60');
+    await expect(page.getByRole('heading', { name: 'Porcelanico Sal Soluble Napoles Slim' })).toBeVisible();
+    await expect(page.getByText('$ 25,11').first()).toBeVisible();
+    await expect(page.getByText(/Precio BCV \(pago en Bs\): \$ 30,20/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dónde instalarlo' })).toBeVisible();
+    await expect(page.getByText('Resbaladizo').first()).toBeVisible();
+    // Sin existencias cargadas: no se puede agregar, pero se puede consultar por WhatsApp con el contexto del producto.
+    await expect(page.getByRole('button', { name: 'Agotado' })).toBeDisabled();
+    await expect(page.getByTestId('whatsapp-link').first()).toHaveAttribute('href', /Napoles/);
+  });
+
+  test('el administrador genera el enlace de activación y Juan define su contraseña', async ({ page, browser }) => {
+    await login(page, 'admin@e2e.local', 'AdminE2E2026');
+    await page.goto('/admin/vendedores');
+    const row = page.locator('.card', { hasText: 'alarconbravocontact@gmail.com' });
+    await expect(row.getByText('Pendiente de activación')).toBeVisible();
+    await row.getByRole('button', { name: 'Generar enlace de activación' }).click();
+    const link = await row.locator('code').innerText();
+    expect(link).toContain('/activar?token=');
+    const ctx = await browser.newContext();
+    const juan = await ctx.newPage();
+    await juan.goto(link.replace(/^https?:\/\/[^/]+/, ''));
+    await expect(juan.getByText('alarconbravocontact@gmail.com')).toBeVisible();
+    await juan.getByLabel('Nueva contraseña').fill('JuanBarinas2026');
+    await juan.getByLabel('Repite la contraseña').fill('JuanBarinas2026');
+    await juan.getByRole('button', { name: 'Activar y entrar' }).click();
+    await expect(juan).toHaveURL(/\/vendedor$/);
+    await expect(juan.getByRole('heading', { name: 'Mis operaciones' })).toBeVisible();
+    await ctx.close();
+  });
 });

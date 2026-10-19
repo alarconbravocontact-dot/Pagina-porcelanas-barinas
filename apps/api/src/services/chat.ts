@@ -7,7 +7,7 @@ import { notify } from './notifications';
 
 const convInclude = {
   customer: { select: { id: true, fullName: true, userId: true } },
-  seller: { select: { id: true, displayName: true, userId: true } },
+  seller: { select: { id: true, displayName: true, userId: true, city: true, branch: true, whatsapp: true, publicPhone: true, publicEmail: true } },
   order: { select: { id: true, code: true, status: true } },
 } satisfies Prisma.ConversationInclude;
 
@@ -36,7 +36,7 @@ function serialize(conv: ConvFull, side: Side, unread: number, last?: { body: st
     status: conv.status,
     subject: conv.subject,
     customer: { id: conv.customer.id, fullName: conv.customer.fullName },
-    seller: { id: conv.seller.id, displayName: conv.seller.displayName },
+    seller: { id: conv.seller.id, displayName: conv.seller.displayName, city: conv.seller.city, branch: conv.seller.branch, whatsapp: conv.seller.whatsapp, publicPhone: conv.seller.publicPhone, publicEmail: conv.seller.publicEmail },
     order: conv.order,
     lastMessageAt: conv.lastMessageAt,
     customerLastReadAt: conv.customerLastReadAt,

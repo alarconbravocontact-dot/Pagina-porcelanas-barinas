@@ -13,6 +13,10 @@ import type {
   ProductStatus,
   QuantityMode,
   Role,
+  SlipRating,
+  PriceList,
+  PaymentReviewState,
+  UsageLevel,
 } from '@porcelanas/shared';
 
 export interface SessionUser {
@@ -42,7 +46,14 @@ export interface Product {
   pricingBasis: 'M2' | 'BOX';
   priceBoxCents: number;
   priceM2Cents: number;
+  priceBcvBoxCents: number;
+  priceBcvM2Cents: number;
+  hasBcvPrice: boolean;
   finish: Finish;
+  finishNote: string;
+  slipRating: SlipRating | null;
+  usageGuide: Record<'salas' | 'cocina' | 'pisoBano' | 'ducha' | 'exterior' | 'paredes', UsageLevel> | null;
+  sourceNote?: string;
   antiSlip: AntiSlip;
   status: ProductStatus;
   featured: boolean;
@@ -95,6 +106,9 @@ export interface QuoteLine {
   priceBoxCents: number;
   priceM2Cents: number;
   lineTotalCents: number;
+  priceBcvBoxCents: number;
+  priceBcvM2Cents: number;
+  lineTotalBcvCents: number;
   availableBoxes: number;
   stockOk: boolean;
   error: string | null;
@@ -103,6 +117,7 @@ export interface QuoteLine {
 export interface Quote {
   lines: QuoteLine[];
   subtotalCents: number;
+  subtotalBcvCents: number;
   totalBoxes: number;
   totalAreaUnits: number;
   rate: RateStatus | null;
@@ -118,7 +133,16 @@ export interface CartView {
   quote: Quote | null;
 }
 
-export interface Seller {
+/** Datos de contacto comercial públicos del vendedor. */
+export interface SellerContact {
+  city?: string;
+  branch?: string;
+  publicPhone?: string;
+  whatsapp?: string;
+  publicEmail?: string;
+}
+
+export interface Seller extends SellerContact {
   id: string;
   displayName: string;
   bio: string | null;
@@ -130,7 +154,13 @@ export interface PaymentMethod {
   name: string;
   currency: Currency;
   instructions: string;
+  receivingDetails: string;
+  buyerNote: string;
+  proofInstructions: string;
   requiresProof: boolean;
+  priceList?: PriceList;
+  configured: boolean;
+  available?: boolean;
   active?: boolean;
   sortOrder?: number;
 }
@@ -157,8 +187,10 @@ export interface Order {
   id: string;
   code: string;
   type: OrderType;
+  priceList: PriceList;
   status: OrderStatus;
   paymentStatus: OrderPaymentStatus;
+  paymentReviewState: PaymentReviewState;
   subtotalCents: number;
   totalCents: number;
   totalVesCents: number;
@@ -181,9 +213,9 @@ export interface Order {
   customerNotes: string | null;
   createdAt: string;
   terms: Record<string, unknown> & { maxReschedules?: number; prepayMinPercent?: number };
-  seller: { id: string; displayName: string; phone?: string };
+  seller: { id: string; displayName: string; phone?: string } & SellerContact;
   customer?: { id: string; fullName: string; phone: string };
-  preferredMethod: { id: string; name: string; kind: PaymentMethodKind; currency: Currency } | null;
+  preferredMethod: PaymentMethod | null;
   reservation: { status: string; pickupDate: string; heldUntil: string | null; releasedAt: string | null; releaseReason: string | null } | null;
   items: {
     id: string;
@@ -214,7 +246,7 @@ export interface Conversation {
   status: ConversationStatus;
   subject: string | null;
   customer: { id: string; fullName: string };
-  seller: { id: string; displayName: string };
+  seller: { id: string; displayName: string } & SellerContact;
   order: { id: string; code: string; status: OrderStatus } | null;
   lastMessageAt: string;
   customerLastReadAt: string | null;

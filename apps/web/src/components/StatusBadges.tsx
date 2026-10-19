@@ -1,4 +1,4 @@
-import type { OrderPaymentStatus, OrderStatus, PaymentStatus } from '@porcelanas/shared';
+import { PAYMENT_REVIEW_STATE_LABELS, type OrderPaymentStatus, type OrderStatus, type PaymentReviewState, type PaymentStatus } from '@porcelanas/shared';
 import { Badge } from './ui';
 import { ORDER_PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../lib/format';
 
@@ -16,6 +16,11 @@ export const OrderStatusBadge = ({ status }: { status: OrderStatus }) => <Badge 
 export const OrderPaymentBadge = ({ status }: { status: OrderPaymentStatus }) => (
   <Badge color={status === 'PAID' ? 'green' : status === 'PARTIAL' ? 'blue' : 'gray'}>{ORDER_PAYMENT_STATUS_LABELS[status]}</Badge>
 );
+
+export function PaymentReviewBadge({ state }: { state: PaymentReviewState }) {
+  const color = state === 'APPROVED' ? 'green' : state === 'REJECTED' ? 'red' : state === 'PROOF_RECEIVED' ? 'amber' : state === 'PARTIALLY_APPROVED' ? 'blue' : 'gray';
+  return <Badge color={color}>{PAYMENT_REVIEW_STATE_LABELS[state]}</Badge>;
+}
 
 export const PaymentStatusBadge = ({ status }: { status: PaymentStatus }) => (
   <Badge color={status === 'APPROVED' ? 'green' : status === 'REJECTED' ? 'red' : 'amber'}>{PAYMENT_STATUS_LABELS[status]}</Badge>

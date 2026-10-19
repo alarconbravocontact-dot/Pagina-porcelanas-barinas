@@ -7,7 +7,7 @@ import type { Product } from '../lib/types';
 import { ANTISLIP_LABELS, FINISH_LABELS, formatUSD } from '../lib/format';
 import { Calculator } from '../components/Calculator';
 import { StockBadge } from '../components/StatusBadges';
-import { WhatsAppButton } from '../components/WhatsAppButton';
+import { UsageGuide } from '../components/UsageGuide';
 import { ErrorState, Spinner } from '../components/ui';
 import { NotFoundPage } from './NotFound';
 import { ProductImage } from '../components/ProductCard';
@@ -28,7 +28,7 @@ export function ProductDetailPage() {
     ...(p.thicknessMm ? ([['Espesor', `${String(p.thicknessMm).replace('.', ',')} mm`]] as [string, string][]) : []),
     ['Piezas por caja', String(p.piecesPerBox)],
     ['m² por caja', p.boxAreaM2.replace('.', ',')],
-    ['Acabado', FINISH_LABELS[p.finish]],
+    ['Acabado', FINISH_LABELS[p.finish] + (p.finishNote ? ` · ${p.finishNote}` : '')],
     ['Antideslizante', ANTISLIP_LABELS[p.antiSlip]],
     ['Ambientes', p.categories.map((c) => c.name).join(', ')],
   ];
@@ -66,13 +66,16 @@ export function ProductDetailPage() {
             </p>
             <p className="text-ink-muted">{formatUSD(p.priceBoxCents)} por caja</p>
           </div>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-ink-muted">
+            Precio en divisas{p.hasBcvPrice && <> · Precio BCV (pago en Bs): {formatUSD(p.priceBcvM2Cents)} /m² · {formatUSD(p.priceBcvBoxCents)} por caja</>}
+          </p>
           <p className="mt-1 text-xs text-ink-muted">{p.availableBoxes > 0 ? `${p.availableBoxes} cajas disponibles para reservar` : 'Sin existencias disponibles en este momento'}</p>
           {p.description && <p className="mt-5 whitespace-pre-line text-ink-soft">{p.description}</p>}
           <div className="mt-6">
             <Calculator product={p} />
           </div>
-          <div className="mt-4">
-            <WhatsAppButton message={`Hola, quisiera información sobre ${p.name} (SKU ${p.sku}).`} />
+          <div className="mt-8">
+            <UsageGuide guide={p.usageGuide} rating={p.slipRating} note={p.finishNote} />
           </div>
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-stone-200 pt-6 text-sm">
             {specs.map(([k, v]) => (

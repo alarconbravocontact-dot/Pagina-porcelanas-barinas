@@ -29,6 +29,16 @@ Un único proceso Node sirve la API (`/api`), los archivos públicos (`/media`),
 - **Tiempo real.** Socket.IO autenticado con la cookie de sesión; salas por usuario y por conversación (la unión a una sala se autoriza en el servidor). Si el socket no conecta, la interfaz sondea periódicamente. Los mensajes siempre se persisten vía REST antes de emitirse.
 - **Zona horaria.** Instantes en UTC; fechas comerciales (`pickupDate`, `effectiveDate`) como `DATE` en la zona configurada (`store.timezone`, por defecto America/Caracas). Indicadores agrupados por día local.
 
+## Vendedores, métodos de pago y catálogo de Barinas
+- **Vendedor obligatorio y confirmado**: el checkout exige `sellerId` de un vendedor activo y `sellerConfirmed: true`. Con un solo vendedor activo se preselecciona, pero el comprador debe confirmarlo. Los vendedores nuevos aparecen sin cambiar código (`GET /api/sellers`).
+- **Contacto público del vendedor**: `city`, `branch`, `publicPhone`, `publicEmail` y `whatsapp` (derivado del teléfono con `toWhatsappNumber`: +58 sin el 0 inicial). Es independiente del teléfono interno, que nunca se publica.
+- **Activación de cuentas**: `UserToken` guarda solo el hash de un token de un solo uso (72 h). El administrador lo genera (`POST /api/admin/users/:id/activation-link` o `npm run user:activation-link`) y el usuario define su propia contraseña en `/activar`. No se inventan contraseñas.
+- **Métodos de pago**: nombre, estado, moneda, instrucciones, datos de recepción, texto adicional, requisitos de comprobante y orden. `configured` = tiene datos de recepción (o es efectivo). Los no configurados se muestran deshabilitados, no exponen instrucciones y el servidor rechaza elegirlos (`PAYMENT_METHOD_NOT_CONFIGURED`) o pagar con ellos.
+- **Método elegido ≠ estado de pago**: `Order.preferredMethodId` guarda la elección; `paymentStatus` (UNPAID/PARTIAL/PAID) solo cambia con pagos aprobados. Al comprador se le muestra `paymentReviewState`: pago pendiente → comprobante recibido (en revisión) → pago aprobado / rechazado.
+- **Listas de precios**: `Product.priceBcvM2Cents/priceBcvBoxCents` (nulo = igual a divisas). `Order.priceList` = `BCV` si el método es en Bs, `DIVISA` si es en USD; importes e ítems se guardan en esa lista y `totalVesCents` = total BCV × tasa fijada. Pagos en otra moneda → `PRICE_LIST_MISMATCH`.
+- **Guía de uso**: `Product.slipRating` (R11, R10, moderado, medio‑bajo, resbaladizo) y `usageGuide` (salas, cocina, piso de baño, ducha, exterior, paredes = recomendado / precaución / no recomendado). Filtros `?use=ducha` y `?slip=R10`.
+- **Importación idempotente** (`src/seed/business.ts`): crea por SKU solo lo que falta; no toca existencias ni productos editados; sin `--demo` desactiva los datos de demostración.
+
 ## Roles y permisos
 | Permiso | Admin | Vendedor | Cliente |
 |---|---|---|---|
@@ -39,14 +49,14 @@ Un único proceso Node sirve la API (`/api`), los archivos públicos (`/media`),
 | Cancelar operaciones | ✔ | ✘ | propias sin pagos acreditados y con la anticipación configurada |
 | Chat | supervisión de solo lectura | sus conversaciones | las propias |
 
-## Modelo de datos (30 modelos)
-`User`, `Session`, `CustomerProfile`, `Seller` · `Category`, `Product`, `ProductCategory`, `ProductImage`, `Inventory`, `InventoryMovement`, `PriceHistory` · `ExchangeRate`, `Quote` · `Cart`, `CartItem` · `Order`, `OrderItem` (copia histórica de producto, precio y cantidades), `Reservation`, `PickupDay`, `BlockedPickupDate`, `OrderEvent`, `OrderNote` · `PaymentMethod`, `Payment`, `PaymentProof` · `Conversation`, `Message`, `Notification` · `AuditLog`, `BusinessSetting`.
+## Modelo de datos (31 modelos)
+`User`, `Session`, `CustomerProfile`, `Seller` · `Category`, `Product`, `ProductCategory`, `ProductImage`, `Inventory`, `InventoryMovement`, `PriceHistory` · `ExchangeRate`, `Quote` · `Cart`, `CartItem` · `Order`, `OrderItem` (copia histórica de producto, precio y cantidades), `Reservation`, `PickupDay`, `BlockedPickupDate`, `OrderEvent`, `OrderNote` · `PaymentMethod`, `Payment`, `PaymentProof` · `Conversation`, `Message`, `Notification` · `AuditLog`, `BusinessSetting` · `UserToken` (activación de cuentas).
 
 Los roles son un enum con permisos definidos en código (`packages/shared/src/permissions.ts`) más banderas por vendedor; no se creó una tabla de permisos porque no hay requisitos de permisos dinámicos.
 
-Migración: `apps/api/prisma/migrations/20261018210412_init` (incluye `CHECK` de existencias e importes, índice único parcial de referencias aprobadas y la restricción de dueño del carrito).
+Migraciones: `20261018210412_init` y `20261019003908_catalogo_vendedor_pagos` (precios BCV, guía de uso, contacto del vendedor, datos de recepción, lista de precios de la orden, tokens de activación). La inicial (incluye `CHECK` de existencias e importes, índice único parcial de referencias aprobadas y la restricción de dueño del carrito).
 
-## Endpoints (80)
+## Endpoints (83)
 | Método | Ruta |
 |---|---|
 | GET | `/api/health` |
@@ -63,6 +73,8 @@ Migración: `apps/api/prisma/migrations/20261018210412_init` (incluye `CHECK` de
 | GET | `/api/auth/session` |
 | POST | `/api/auth/register` |
 | POST | `/api/auth/login` |
+| POST | `/api/auth/activation/check` |
+| POST | `/api/auth/activate` |
 | POST | `/api/auth/logout` |
 | PATCH | `/api/auth/profile` |
 | POST | `/api/auth/password` |
@@ -113,6 +125,7 @@ Migración: `apps/api/prisma/migrations/20261018210412_init` (incluye `CHECK` de
 | GET | `/api/admin/sellers` |
 | POST | `/api/admin/sellers` |
 | PUT | `/api/admin/sellers/:id` |
+| POST | `/api/admin/users/:id/activation-link` |
 | GET | `/api/admin/users` |
 | PATCH | `/api/admin/users/:id` |
 | GET | `/api/admin/rates` |

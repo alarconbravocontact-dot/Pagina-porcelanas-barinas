@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { loginSchema, passwordSchema, profileUpdateSchema, registerSchema } from '@porcelanas/shared';
+import { activationSchema, loginSchema, passwordSchema, profileUpdateSchema, registerSchema } from '@porcelanas/shared';
+import { checkActivationToken, consumeActivationToken } from '../services/tokens';
 import { z } from 'zod';
 import { prisma } from '../db';
 import { audit } from '../lib/audit';
@@ -61,6 +62,20 @@ export async function authRoutes(app: FastifyInstance) {
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     await createSession(reply, req, user.id);
     await mergeGuestCart(req, reply, user.id);
+    return { ok: true, role: user.role };
+  });
+
+  app.post('/api/auth/activation/check', strict, async (req) => {
+    const { token } = parse(z.object({ token: z.string().trim().min(20).max(200) }), req.body);
+    return checkActivationToken(token);
+  });
+
+  /** El propio usuario define su contraseña con el enlace de un solo uso. */
+  app.post('/api/auth/activate', strict, async (req, reply) => {
+    const input = parse(activationSchema, req.body);
+    const user = await consumeActivationToken(input.token, input.password);
+    await createSession(reply, req, user.id);
+    await audit(req, 'user.activate', 'User', user.id);
     return { ok: true, role: user.role };
   });
 

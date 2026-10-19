@@ -13,7 +13,8 @@
     "db:seed:demo": "tsx --env-file-if-exists=../../.env prisma/seed.ts --demo",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "db:generate": "node scripts/prisma.mjs generate"
+    "db:generate": "node scripts/prisma.mjs generate",
+    "user:activation-link": "tsx --env-file-if-exists=../../.env prisma/activation-link.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

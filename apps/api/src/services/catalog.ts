@@ -51,7 +51,14 @@ export function toPublicProduct(p: ProductFull) {
     pricingBasis: p.pricingBasis,
     priceBoxCents: p.priceBoxCents,
     priceM2Cents: p.priceM2Cents,
+    /** Precio de referencia BCV (pagos en Bs). Si no se definió, coincide con el de divisas. */
+    priceBcvBoxCents: p.priceBcvBoxCents ?? p.priceBoxCents,
+    priceBcvM2Cents: p.priceBcvM2Cents ?? p.priceM2Cents,
+    hasBcvPrice: p.priceBcvBoxCents != null,
     finish: p.finish,
+    finishNote: p.finishNote,
+    slipRating: p.slipRating,
+    usageGuide: p.usageGuide as Record<string, 'YES' | 'CAUTION' | 'NO'> | null,
     antiSlip: p.antiSlip,
     status: p.status,
     featured: p.featured,
@@ -71,6 +78,7 @@ export function toAdminProduct(p: ProductFull) {
     onHandBoxes: p.inventory?.onHandBoxes ?? 0,
     reservedBoxes: p.inventory?.reservedBoxes ?? 0,
     lowStockThreshold: p.inventory?.lowStockThreshold ?? 0,
+    sourceNote: p.sourceNote,
   };
 }
 
@@ -89,6 +97,8 @@ export async function listCatalog(query: CatalogQuery, opts: { admin?: boolean; 
   if (query.size) where.sizeLabel = query.size;
   if (query.finish) where.finish = query.finish;
   if (query.antiSlip) where.antiSlip = query.antiSlip;
+  if (query.slip) where.slipRating = query.slip;
+  if (query.use) where.usageGuide = { path: [query.use], equals: 'YES' };
   if (query.featured === 'true') where.featured = true;
   if (query.category) where.categories = { some: { category: { slug: query.category } } };
   const price: Prisma.IntFilter = {};
@@ -160,15 +170,29 @@ export async function getProduct(idOrSku: string, opts: { admin?: boolean } = {}
   return opts.admin ? toAdminProduct(product) : toPublicProduct(product);
 }
 
-function computePrices(input: Pick<ProductInput, 'pricingBasis' | 'price' | 'boxAreaM2'>) {
+export function computePrices(input: Pick<ProductInput, 'pricingBasis' | 'price' | 'boxAreaM2' | 'priceBcv'>) {
   const boxAreaUnits = m2ToUnits(input.boxAreaM2);
   if (boxAreaUnits <= 0) throw badRequest('INVALID_AREA', 'Los m² por caja deben ser mayores que cero');
-  const priceCents = parseMoneyToCents(input.price);
-  if (input.pricingBasis === 'M2') {
-    return { boxAreaUnits, priceM2Cents: priceCents, priceBoxCents: priceBoxFromM2(priceCents, boxAreaUnits) };
-  }
-  return { boxAreaUnits, priceBoxCents: priceCents, priceM2Cents: priceM2FromBox(priceCents, boxAreaUnits) };
+  const pair = (cents: number) =>
+    input.pricingBasis === 'M2'
+      ? { m2: cents, box: priceBoxFromM2(cents, boxAreaUnits) }
+      : { box: cents, m2: priceM2FromBox(cents, boxAreaUnits) };
+  const divisa = pair(parseMoneyToCents(input.price));
+  const bcv = input.priceBcv ? pair(parseMoneyToCents(input.priceBcv)) : null;
+  return {
+    boxAreaUnits,
+    priceBoxCents: divisa.box,
+    priceM2Cents: divisa.m2,
+    priceBcvBoxCents: bcv?.box ?? null,
+    priceBcvM2Cents: bcv?.m2 ?? null,
+  };
 }
+
+const extraFields = (input: ProductInput) => ({
+  finishNote: input.finishNote ?? '',
+  slipRating: input.slipRating ?? null,
+  usageGuide: input.usageGuide ?? Prisma.DbNull,
+});
 
 async function assertCategories(tx: Tx, ids: string[]) {
   const count = await tx.category.count({ where: { id: { in: ids } } });
@@ -194,6 +218,9 @@ export async function createProduct(input: ProductInput, userId: string, initial
         pricingBasis: input.pricingBasis,
         priceBoxCents: prices.priceBoxCents,
         priceM2Cents: prices.priceM2Cents,
+        priceBcvBoxCents: prices.priceBcvBoxCents,
+        priceBcvM2Cents: prices.priceBcvM2Cents,
+        ...extraFields(input),
         finish: input.finish,
         antiSlip: input.antiSlip,
         status: input.status,
@@ -205,6 +232,8 @@ export async function createProduct(input: ProductInput, userId: string, initial
             pricingBasis: input.pricingBasis,
             priceBoxCents: prices.priceBoxCents,
             priceM2Cents: prices.priceM2Cents,
+            priceBcvBoxCents: prices.priceBcvBoxCents,
+            priceBcvM2Cents: prices.priceBcvM2Cents,
             changedById: userId,
           },
         },
@@ -234,6 +263,7 @@ export async function updateProduct(id: string, input: ProductInput, userId: str
     const priceChanged =
       current.priceBoxCents !== prices.priceBoxCents ||
       current.priceM2Cents !== prices.priceM2Cents ||
+      current.priceBcvBoxCents !== prices.priceBcvBoxCents ||
       current.pricingBasis !== input.pricingBasis;
     await tx.product.update({
       where: { id },
@@ -251,6 +281,9 @@ export async function updateProduct(id: string, input: ProductInput, userId: str
         pricingBasis: input.pricingBasis,
         priceBoxCents: prices.priceBoxCents,
         priceM2Cents: prices.priceM2Cents,
+        priceBcvBoxCents: prices.priceBcvBoxCents,
+        priceBcvM2Cents: prices.priceBcvM2Cents,
+        ...extraFields(input),
         finish: input.finish,
         antiSlip: input.antiSlip,
         status: input.status,
@@ -264,6 +297,8 @@ export async function updateProduct(id: string, input: ProductInput, userId: str
                   pricingBasis: input.pricingBasis,
                   priceBoxCents: prices.priceBoxCents,
                   priceM2Cents: prices.priceM2Cents,
+                  priceBcvBoxCents: prices.priceBcvBoxCents,
+                  priceBcvM2Cents: prices.priceBcvM2Cents,
                   changedById: userId,
                 },
               },

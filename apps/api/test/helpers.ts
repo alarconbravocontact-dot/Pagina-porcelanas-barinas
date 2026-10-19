@@ -184,10 +184,10 @@ export async function scenario(opts: { stock?: number; rate?: string; capacity?:
     });
   }
   const methodUsd = await prisma.paymentMethod.create({
-    data: { kind: 'ZELLE', name: 'Zelle', currency: 'USD', instructions: 'Instrucciones de prueba', requiresProof: true, active: true },
+    data: { kind: 'ZELLE', name: 'Zelle', currency: 'USD', instructions: 'Instrucciones de prueba', receivingDetails: 'Destinatario de prueba', requiresProof: true, active: true },
   });
   const methodVes = await prisma.paymentMethod.create({
-    data: { kind: 'PAGO_MOVIL', name: 'Pago Móvil', currency: 'VES', instructions: 'Instrucciones de prueba', requiresProof: true, active: true },
+    data: { kind: 'PAGO_MOVIL', name: 'Pago Móvil', currency: 'VES', instructions: 'Instrucciones de prueba', receivingDetails: 'Teléfono de prueba', requiresProof: true, active: true },
   });
   // Todos los días habilitados para que las pruebas no dependan del día de la semana.
   await setSetting('pickup', {
@@ -226,6 +226,7 @@ export async function checkout(
     '/api/orders',
     {
       sellerId: s.seller.id,
+      sellerConfirmed: true,
       type: 'PICKUP',
       pickupDate: s.pickupDate,
       paymentMethodId: s.methodUsd.id,

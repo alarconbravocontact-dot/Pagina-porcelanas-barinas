@@ -17,13 +17,16 @@ import { assertDateAllowed, fromDbDate, releaseCapacity, reserveCapacity, toDbDa
 import { computeQuote, createQuote, quoteMatches, type StoredQuoteLine } from './quotes';
 import { getCurrentRate } from './rates';
 import { getSettings } from './settings';
+import { isMethodConfigured, publicMethod } from './paymentMethods';
 
 export const ACTIVE_STATUSES: OrderStatus[] = ['PENDING_PAYMENT', 'CONFIRMED', 'READY_FOR_PICKUP'];
 
 export const orderInclude = {
   items: true,
   reservation: true,
-  seller: { select: { id: true, displayName: true, phone: true, userId: true } },
+  seller: {
+    select: { id: true, displayName: true, phone: true, userId: true, city: true, branch: true, publicPhone: true, whatsapp: true, publicEmail: true },
+  },
   customer: { select: { id: true, fullName: true, phone: true, userId: true } },
   preferredMethod: true,
   payments: {
@@ -40,13 +43,24 @@ export const orderInclude = {
 
 export type OrderFull = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
+/** Estado de revisión para el comprador: método elegido ≠ pago recibido ≠ pago aprobado. */
+export function paymentReviewState(o: Pick<OrderFull, 'paymentStatus' | 'payments'>) {
+  if (o.paymentStatus === 'PAID') return 'APPROVED' as const;
+  if (o.payments.some((p) => p.status === 'PENDING')) return 'PROOF_RECEIVED' as const;
+  if (o.paymentStatus === 'PARTIAL') return 'PARTIALLY_APPROVED' as const;
+  if (o.payments.length > 0 && o.payments[0]!.status === 'REJECTED') return 'REJECTED' as const;
+  return 'AWAITING_PAYMENT' as const;
+}
+
 export function serializeOrder(o: OrderFull, viewer: 'customer' | 'staff') {
   return {
     id: o.id,
     code: o.code,
     type: o.type,
+    priceList: o.priceList,
     status: o.status,
     paymentStatus: o.paymentStatus,
+    paymentReviewState: paymentReviewState(o),
     subtotalCents: o.subtotalCents,
     totalCents: o.totalCents,
     totalVesCents: o.totalVesCents,
@@ -69,11 +83,18 @@ export function serializeOrder(o: OrderFull, viewer: 'customer' | 'staff') {
     customerNotes: o.customerNotes,
     createdAt: o.createdAt,
     terms: o.termsSnapshot,
-    seller: { id: o.seller.id, displayName: o.seller.displayName, ...(viewer === 'staff' ? { phone: o.seller.phone } : {}) },
+    seller: {
+      id: o.seller.id,
+      displayName: o.seller.displayName,
+      city: o.seller.city,
+      branch: o.seller.branch,
+      publicPhone: o.seller.publicPhone,
+      whatsapp: o.seller.whatsapp,
+      publicEmail: o.seller.publicEmail,
+      ...(viewer === 'staff' ? { phone: o.seller.phone } : {}),
+    },
     customer: viewer === 'staff' ? { id: o.customer.id, fullName: o.customer.fullName, phone: o.customer.phone } : undefined,
-    preferredMethod: o.preferredMethod
-      ? { id: o.preferredMethod.id, name: o.preferredMethod.name, kind: o.preferredMethod.kind, currency: o.preferredMethod.currency }
-      : null,
+    preferredMethod: o.preferredMethod ? publicMethod(o.preferredMethod) : null,
     reservation: o.reservation
       ? {
           status: o.reservation.status,
@@ -162,6 +183,11 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
   }
   const method = await prisma.paymentMethod.findUnique({ where: { id: input.paymentMethodId } });
   if (!method || !method.active) throw new AppError(422, 'PAYMENT_METHOD_INVALID', 'El método de pago no está disponible');
+  if (!isMethodConfigured(method)) {
+    throw new AppError(422, 'PAYMENT_METHOD_NOT_CONFIGURED', `El método ${method.name} aún no tiene sus datos de pago configurados por la tienda. Elija otro método.`);
+  }
+  // La moneda del método define la lista de precios: USD → divisas; Bs → precio BCV.
+  const priceList = method.currency === 'VES' ? 'BCV' : 'DIVISA';
 
   const settings = await assertDateAllowed(input.pickupDate, input.type);
 
@@ -197,12 +223,14 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
     quoteId = q.id;
   }
 
-  const subtotalCents = current.subtotalCents;
+  const subtotalCents = priceList === 'BCV' ? current.subtotalBcvCents : current.subtotalCents;
   const totalCents = subtotalCents;
   const requiredCents = input.type === 'PICKUP' ? totalCents : percentOfCents(totalCents, settings.reservation.prepayMinPercent);
   const holdUntil = new Date(Date.now() + settings.reservation.holdHours * 3_600_000);
   const termsSnapshot = {
     type: input.type,
+    priceList,
+    paymentMethod: { id: method.id, name: method.name, currency: method.currency },
     holdHours: settings.reservation.holdHours,
     prepayMinPercent: input.type === 'PREPAY' ? settings.reservation.prepayMinPercent : 100,
     extendWhilePaymentPending: settings.reservation.extendWhilePaymentPending,
@@ -226,6 +254,7 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
             customerId: auth.customerId,
             sellerId: seller.id,
             type: input.type,
+            priceList,
             status: 'PENDING_PAYMENT',
             paymentStatus: 'UNPAID',
             preferredMethodId: method.id,
@@ -234,7 +263,8 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
             rateValue,
             subtotalCents,
             totalCents,
-            totalVesCents: usdCentsToVesCents(totalCents, rateValue),
+            // Equivalente en Bs con el precio BCV (referencia oficial para pagos en bolívares).
+            totalVesCents: usdCentsToVesCents(current.subtotalBcvCents, rateValue),
             requiredCents,
             paidCents: 0,
             balanceCents: totalCents,
@@ -260,9 +290,9 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
                 requestedQuantity: l.requestedQuantity,
                 boxes: l.boxes,
                 areaUnits: l.areaUnits,
-                priceBoxCents: l.priceBoxCents,
-                priceM2Cents: l.priceM2Cents,
-                lineTotalCents: l.lineTotalCents,
+                priceBoxCents: priceList === 'BCV' ? l.priceBcvBoxCents : l.priceBoxCents,
+                priceM2Cents: priceList === 'BCV' ? l.priceBcvM2Cents : l.priceM2Cents,
+                lineTotalCents: priceList === 'BCV' ? l.lineTotalBcvCents : l.lineTotalCents,
               })),
             },
             reservation: { create: { status: 'HELD', pickupDate: toDbDate(input.pickupDate), heldUntil: holdUntil } },

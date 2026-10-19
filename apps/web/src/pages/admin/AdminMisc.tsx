@@ -31,29 +31,44 @@ interface AdminSeller {
   displayName: string;
   phone: string;
   bio: string | null;
+  city: string;
+  branch: string;
+  publicPhone: string;
+  whatsapp: string;
+  publicEmail: string;
   active: boolean;
   canReviewPayments: boolean;
   canViewProofs: boolean;
-  user: { email: string; active: boolean; lastLoginAt: string | null };
+  user: { id: string; email: string; active: boolean; lastLoginAt: string | null; pendingActivation: boolean };
   _count: { orders: number };
 }
 
 export function AdminSellers() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['admin-sellers'], queryFn: () => api<AdminSeller[]>('/api/admin/sellers') });
-  const [form, setForm] = useState({ fullName: '', displayName: '', email: '', phone: '', password: '', canReviewPayments: false, canViewProofs: true });
+  const EMPTY = { fullName: '', displayName: '', email: '', phone: '', password: '', canReviewPayments: false, canViewProofs: true, city: '', branch: '', publicPhone: '', publicEmail: '' };
+  const [form, setForm] = useState(EMPTY);
+  const [links, setLinks] = useState<Record<string, string>>({});
+  const activation = useMutation({
+    mutationFn: (userId: string) => api<{ path: string; expiresInHours: number }>(`/api/admin/users/${userId}/activation-link`, { method: 'POST', body: {} }),
+    onSuccess: (r, userId) => setLinks((l) => ({ ...l, [userId]: `${window.location.origin}${r.path}` })),
+  });
   const [fields, setFields] = useState<Record<string, string>>({});
   const create = useMutation({
     mutationFn: () => api('/api/admin/sellers', { body: form }),
     onSuccess: () => {
-      setForm({ fullName: '', displayName: '', email: '', phone: '', password: '', canReviewPayments: false, canViewProofs: true });
+      setForm(EMPTY);
       void qc.invalidateQueries({ queryKey: ['admin-sellers'] });
       void qc.invalidateQueries({ queryKey: ['sellers'] });
     },
     onError: (e) => e instanceof ApiError && setFields(e.fields),
   });
   const update = useMutation({
-    mutationFn: (s: AdminSeller) => api(`/api/admin/sellers/${s.id}`, { method: 'PUT', body: { displayName: s.displayName, phone: s.phone, active: s.active, canReviewPayments: s.canReviewPayments, canViewProofs: s.canViewProofs, bio: s.bio ?? undefined } }),
+    mutationFn: (s: AdminSeller) =>
+      api(`/api/admin/sellers/${s.id}`, {
+        method: 'PUT',
+        body: { displayName: s.displayName, phone: s.phone, active: s.active, canReviewPayments: s.canReviewPayments, canViewProofs: s.canViewProofs, bio: s.bio ?? undefined, city: s.city, branch: s.branch, publicPhone: s.publicPhone, publicEmail: s.publicEmail },
+      }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-sellers'] });
       void qc.invalidateQueries({ queryKey: ['sellers'] });
@@ -81,7 +96,23 @@ export function AdminSellers() {
                     {s.user.email} · {s.phone} · {s._count.orders} operaciones · último acceso {s.user.lastLoginAt ? formatDateTime(s.user.lastLoginAt) : 'nunca'}
                   </p>
                 </div>
-                <Badge color={s.active ? 'green' : 'red'}>{s.active ? 'Activo' : 'Desactivado'}</Badge>
+                <span className="flex gap-1">
+                  {s.user.pendingActivation && <Badge color="amber">Pendiente de activación</Badge>}
+                  <Badge color={s.active ? 'green' : 'red'}>{s.active ? 'Activo' : 'Desactivado'}</Badge>
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-ink-soft">
+                Contacto público: {[s.branch || s.city, s.whatsapp && `WhatsApp +${s.whatsapp}`, s.publicEmail].filter(Boolean).join(' · ') || 'sin datos públicos'}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button type="button" className="btn-outline btn-sm" onClick={() => activation.mutate(s.user.id)} disabled={activation.isPending}>
+                  {s.user.pendingActivation ? 'Generar enlace de activación' : 'Enlace para restablecer contraseña'}
+                </button>
+                {links[s.user.id] && (
+                  <span className="text-xs">
+                    Válido 72 h, un solo uso: <code className="break-all bg-stone-100 px-1">{links[s.user.id]}</code>
+                  </span>
+                )}
               </div>
               <div className="mt-3 flex flex-wrap gap-4 text-sm">
                 <label className="flex items-center gap-2">
@@ -109,7 +140,7 @@ export function AdminSellers() {
           noValidate
         >
           <h2 className="text-lg">Nuevo vendedor</h2>
-          {create.isSuccess && <Alert kind="success">Vendedor creado. Comparta la contraseña por un canal seguro.</Alert>}
+          {create.isSuccess && <Alert kind="success">Vendedor creado. Si no definió contraseña, genere su enlace de activación.</Alert>}
           {create.isError && <Alert kind="error">{errorMessage(create.error)}</Alert>}
           <Field label="Nombre completo" htmlFor="s-fn" error={fields.fullName}>
             <input id="s-fn" className="input" value={form.fullName} onChange={(e) => set('fullName', e.target.value)} />
@@ -123,7 +154,19 @@ export function AdminSellers() {
           <Field label="Teléfono" htmlFor="s-ph" error={fields.phone}>
             <input id="s-ph" className="input" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
           </Field>
-          <Field label="Contraseña inicial" htmlFor="s-pw" error={fields.password}>
+          <Field label="Ciudad" htmlFor="s-city" error={fields.city}>
+            <input id="s-city" className="input" value={form.city} onChange={(e) => set('city', e.target.value)} />
+          </Field>
+          <Field label="Sede de referencia" htmlFor="s-branch" error={fields.branch}>
+            <input id="s-branch" className="input" value={form.branch} onChange={(e) => set('branch', e.target.value)} />
+          </Field>
+          <Field label="Teléfono / WhatsApp público" htmlFor="s-pph" error={fields.publicPhone} hint="Se convierte a +58 sin el 0 inicial para el enlace de WhatsApp.">
+            <input id="s-pph" className="input" value={form.publicPhone} onChange={(e) => set('publicPhone', e.target.value)} />
+          </Field>
+          <Field label="Correo público" htmlFor="s-pem" error={fields.publicEmail}>
+            <input id="s-pem" type="email" className="input" value={form.publicEmail} onChange={(e) => set('publicEmail', e.target.value)} />
+          </Field>
+          <Field label="Contraseña inicial (opcional)" htmlFor="s-pw" error={fields.password} hint="Déjela vacía para que el vendedor la defina con un enlace de activación.">
             <input id="s-pw" type="password" autoComplete="new-password" className="input" value={form.password} onChange={(e) => set('password', e.target.value)} />
           </Field>
           <label className="flex items-center gap-2 text-sm">
@@ -350,7 +393,7 @@ export function AdminPaymentMethods() {
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   return (
     <div>
-      <PageHeader title="Métodos de pago" subtitle="Las instrucciones se muestran a los clientes al pagar. Solo los métodos activos se ofrecen." actions={<button type="button" className="btn-primary" onClick={() => setEditing({ id: '', kind: 'PAGO_MOVIL', name: '', currency: 'VES', instructions: '', requiresProof: true, active: false, sortOrder: 0 })}>Nuevo método</button>} />
+      <PageHeader title="Métodos de pago" subtitle="Las instrucciones se muestran a los clientes al pagar. Solo los métodos activos se ofrecen." actions={<button type="button" className="btn-primary" onClick={() => setEditing({ id: '', kind: 'PAGO_MOVIL', name: '', currency: 'VES', instructions: '', receivingDetails: '', buyerNote: '', proofInstructions: '', requiresProof: true, configured: false, active: false, sortOrder: 0 })}>Nuevo método</button>} />
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -361,7 +404,10 @@ export function AdminPaymentMethods() {
                 <p className="font-medium">
                   {m.name} <span className="text-xs text-ink-muted">({PAYMENT_METHOD_LABELS[m.kind]} · {m.currency})</span>
                 </p>
-                <Badge color={m.active ? 'green' : 'gray'}>{m.active ? 'Activo' : 'Inactivo'}</Badge>
+                <span className="flex gap-1">
+                  {!m.configured && <Badge color="amber">Requiere configuración</Badge>}
+                  <Badge color={m.active ? 'green' : 'gray'}>{m.active ? 'Activo' : 'Inactivo'}</Badge>
+                </span>
               </div>
               <p className="mt-1 line-clamp-2 whitespace-pre-line text-xs text-ink-muted">{m.instructions}</p>
             </button>
@@ -417,9 +463,29 @@ function MethodForm({ method, onDone }: { method: PaymentMethod; onDone: () => v
       <Field label="Nombre visible" htmlFor="m-name" error={fields.name}>
         <input id="m-name" className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
       </Field>
-      <Field label="Instrucciones de pago" htmlFor="m-ins" error={fields.instructions} hint="Datos de la cuenta, titular, documento, correo o ID. No incluya contraseñas.">
-        <textarea id="m-ins" className="input min-h-[140px]" value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} />
+      <Field label="Instrucciones para pagar" htmlFor="m-ins" error={fields.instructions} hint="Pasos que debe seguir el comprador.">
+        <textarea id="m-ins" className="input min-h-[100px]" value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} />
       </Field>
+      <Field
+        label="Datos de recepción"
+        htmlFor="m-rec"
+        error={fields.receivingDetails}
+        hint={form.kind === 'CASH' ? 'Opcional para efectivo.' : 'Banco, titular, documento, teléfono, correo Zelle o ID de Binance. Mientras esté vacío, el método se muestra como "pendiente de configuración" y no se puede usar.'}
+      >
+        <textarea id="m-rec" className="input min-h-[100px]" value={form.receivingDetails} onChange={(e) => setForm({ ...form, receivingDetails: e.target.value })} />
+      </Field>
+      <Field label="Texto adicional para el comprador" htmlFor="m-note" error={fields.buyerNote}>
+        <input id="m-note" className="input" value={form.buyerNote} onChange={(e) => setForm({ ...form, buyerNote: e.target.value })} />
+      </Field>
+      <Field label="Requisitos del comprobante" htmlFor="m-proof" error={fields.proofInstructions}>
+        <input id="m-proof" className="input" value={form.proofInstructions} onChange={(e) => setForm({ ...form, proofInstructions: e.target.value })} />
+      </Field>
+      <Field label="Orden en el checkout" htmlFor="m-order">
+        <input id="m-order" type="number" min={0} className="input w-28" value={form.sortOrder ?? 0} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} />
+      </Field>
+      {form.active && form.kind !== 'CASH' && !form.receivingDetails.trim() && (
+        <Alert kind="warning">Activo pero sin datos de recepción: se mostrará deshabilitado como “pendiente de configuración”.</Alert>
+      )}
       <div className="flex flex-wrap gap-4 text-sm">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.requiresProof} onChange={(e) => setForm({ ...form, requiresProof: e.target.checked })} /> Exige comprobante

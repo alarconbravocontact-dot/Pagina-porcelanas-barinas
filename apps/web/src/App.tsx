@@ -8,6 +8,8 @@ import { CheckoutPage } from './pages/Checkout';
 import { LoginPage, RegisterPage } from './pages/Auth';
 import { HowToBuyPage } from './pages/HowToBuy';
 import { PoliciesPage } from './pages/Policies';
+import { ContactPage } from './pages/Contact';
+import { ActivationPage } from './pages/Activation';
 import { NotFoundPage } from './pages/NotFound';
 import { AccountChat, AccountHome, AccountLayout, AccountOrderDetail, AccountOrders, AccountProfile } from './pages/account/Account';
 import { StaffLayout } from './pages/staff/StaffLayout';
@@ -30,6 +32,8 @@ export function App() {
         <Route path="registro" element={<RegisterPage />} />
         <Route path="como-comprar" element={<HowToBuyPage />} />
         <Route path="politicas" element={<PoliciesPage />} />
+        <Route path="contacto" element={<ContactPage />} />
+        <Route path="activar" element={<ActivationPage />} />
         <Route path="cuenta" element={<AccountLayout />}>
           <Route index element={<AccountHome />} />
           <Route path="operaciones" element={<AccountOrders />} />

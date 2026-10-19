@@ -7,6 +7,7 @@ import { errorMessage } from '../lib/api';
 import { formatM2, formatRate, formatUSD, formatVES } from '../lib/format';
 import type { Product } from '../lib/types';
 import { Alert } from './ui';
+import { WhatsAppButton } from './WhatsAppButton';
 
 /**
  * Calculadora por cajas o m². La vista previa es inmediata; el servidor recalcula
@@ -31,6 +32,10 @@ export function Calculator({ product }: { product: Product }) {
   }, [mode, quantity, product.boxAreaUnits, product.priceBoxCents]);
 
   const line = preview.line;
+  const bcvTotal = line ? line.boxes * product.priceBcvBoxCents : 0;
+  const waMessage = line
+    ? `Hola, quisiera información sobre ${product.name} (SKU ${product.sku}): ${mode === 'M2' ? `${quantity} m² → ` : ''}${line.boxes} cajas (${formatM2(line.areaUnits)}), ${formatUSD(line.lineTotalCents)} en divisas.`
+    : `Hola, quisiera información sobre ${product.name} (SKU ${product.sku}).`;
   const overStock = line ? line.boxes > product.availableBoxes : false;
   const out = product.availableBoxes <= 0;
 
@@ -95,10 +100,11 @@ export function Calculator({ product }: { product: Product }) {
           <Row label="Cantidad solicitada" value={mode === 'M2' ? formatM2(line.requestedAreaUnits!) : `${line.requestedBoxes} cajas`} />
           <Row label="Cajas necesarias" value={<strong>{line.boxes}</strong>} />
           <Row label="Metros cuadrados efectivos" value={formatM2(line.areaUnits)} />
-          <Row label="Precio unitario" value={`${formatUSD(line.priceBoxCents)} / caja · ${formatUSD(line.priceM2Cents)} / m²`} />
-          <Row label="Subtotal" value={<strong className="text-base">{formatUSD(line.lineTotalCents)}</strong>} />
+          <Row label="Precio unitario (divisas)" value={`${formatUSD(line.priceBoxCents)} / caja · ${formatUSD(line.priceM2Cents)} / m²`} />
+          <Row label="Total pagando en divisas" value={<strong className="text-base">{formatUSD(line.lineTotalCents)}</strong>} />
+          {product.hasBcvPrice && <Row label="Precio BCV (pago en Bs)" value={`${formatUSD(product.priceBcvBoxCents)} / caja · ${formatUSD(bcvTotal)}`} />}
           <Row label="Tasa BCV aplicada" value={rate ? `Bs. ${formatRate(rate.rate)}` : 'No registrada'} />
-          <Row label="Total equivalente" value={rate ? formatVES(usdCentsToVesCents(line.lineTotalCents, rate.rate)) : '—'} />
+          <Row label="Total pagando en bolívares" value={rate ? formatVES(usdCentsToVesCents(bcvTotal, rate.rate)) : '—'} />
         </dl>
       )}
       {rate?.stale && <p className="mt-2 text-xs text-amber-800">La tasa registrada está desactualizada; el monto en Bs es referencial.</p>}
@@ -121,6 +127,9 @@ export function Calculator({ product }: { product: Product }) {
         {added ? <Check className="h-4 w-4" aria-hidden /> : <ShoppingBag className="h-4 w-4" aria-hidden />}
         {out ? 'Agotado' : add.isPending ? 'Agregando…' : 'Agregar al carrito'}
       </button>
+      <div className="mt-3 flex justify-center">
+        <WhatsAppButton message={waMessage} label={out ? 'Consultar disponibilidad por WhatsApp' : 'Consultar esta cantidad por WhatsApp'} />
+      </div>
     </section>
   );
 }

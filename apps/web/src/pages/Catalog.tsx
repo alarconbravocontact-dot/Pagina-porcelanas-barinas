@@ -2,13 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { ANTISLIP, ANTISLIP_LABELS, FINISHES } from '@porcelanas/shared';
+import { FINISHES, SLIP_RATINGS, SLIP_RATING_LABELS, USAGE_AREAS, USAGE_AREA_LABELS } from '@porcelanas/shared';
 import { api } from '../lib/api';
 import type { Paged, Product } from '../lib/types';
 import { FINISH_LABELS } from '../lib/format';
 import { ProductCard } from '../components/ProductCard';
 import { EmptyState, ErrorState, Pagination, Spinner } from '../components/ui';
 import { RateNotice } from '../components/RateNotice';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 interface Facets {
   colors: { value: string; count: number }[];
@@ -16,7 +17,7 @@ interface Facets {
   categories: { id: string; name: string; slug: string; count: number }[];
 }
 
-const FILTER_KEYS = ['q', 'category', 'color', 'size', 'finish', 'antiSlip', 'minPrice', 'maxPrice', 'available', 'sort', 'page'] as const;
+const FILTER_KEYS = ['q', 'category', 'use', 'slip', 'color', 'size', 'finish', 'antiSlip', 'minPrice', 'maxPrice', 'available', 'sort', 'page'] as const;
 
 export function CatalogPage() {
   const [params, setParams] = useSearchParams();
@@ -80,8 +81,11 @@ export function CatalogPage() {
       <FilterGroup title="Acabado">
         <Select value={params.get('finish')} onChange={(v) => set('finish', v)} options={FINISHES.map((f) => ({ value: f, label: FINISH_LABELS[f] }))} />
       </FilterGroup>
-      <FilterGroup title="Antideslizante">
-        <Select value={params.get('antiSlip')} onChange={(v) => set('antiSlip', v)} options={ANTISLIP.map((a) => ({ value: a, label: ANTISLIP_LABELS[a] }))} />
+      <FilterGroup title="Recomendado para">
+        <Select value={params.get('use')} onChange={(v) => set('use', v)} options={USAGE_AREAS.map((a) => ({ value: a, label: USAGE_AREA_LABELS[a] }))} />
+      </FilterGroup>
+      <FilterGroup title="Agarre / antideslizante">
+        <Select value={params.get('slip')} onChange={(v) => set('slip', v)} options={SLIP_RATINGS.map((a) => ({ value: a, label: SLIP_RATING_LABELS[a] }))} />
       </FilterGroup>
       <FilterGroup title="Precio por m² (USD)">
         <form onSubmit={applyPrice} className="flex items-center gap-2">
@@ -132,7 +136,8 @@ export function CatalogPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <WhatsAppButton message="Hola, estoy viendo el catálogo y quisiera asesoría." label="Asesoría por WhatsApp" />
           <button type="button" className="btn-outline lg:hidden" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
             <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros {activeCount > 0 && `(${activeCount})`}
           </button>

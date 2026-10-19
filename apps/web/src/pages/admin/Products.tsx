@@ -15,7 +15,14 @@ import {
   priceBoxFromM2,
   priceM2FromBox,
   productInputSchema,
+  SLIP_RATINGS,
+  SLIP_RATING_LABELS,
+  USAGE_AREAS,
+  USAGE_AREA_LABELS,
   type InventoryMovementType,
+  type SlipRating,
+  type UsageGuide,
+  type UsageLevel,
 } from '@porcelanas/shared';
 import { api, ApiError, errorMessage, toQuery } from '../../lib/api';
 import type { Paged, Product } from '../../lib/types';
@@ -105,7 +112,11 @@ interface FormState {
   boxAreaM2: string;
   pricingBasis: 'M2' | 'BOX';
   price: string;
+  priceBcv: string;
   finish: (typeof FINISHES)[number];
+  finishNote: string;
+  slipRating: SlipRating | '';
+  usageGuide: UsageGuide | null;
   antiSlip: (typeof ANTISLIP)[number];
   status: (typeof PRODUCT_STATUS)[number];
   featured: boolean;
@@ -126,7 +137,11 @@ const EMPTY: FormState = {
   boxAreaM2: '',
   pricingBasis: 'M2',
   price: '',
+  priceBcv: '',
   finish: 'MATE',
+  finishNote: '',
+  slipRating: '',
+  usageGuide: null,
   antiSlip: 'UNVERIFIED',
   status: 'DRAFT',
   featured: false,
@@ -148,7 +163,11 @@ function fromProduct(p: Product): FormState {
     boxAreaM2: p.boxAreaM2,
     pricingBasis: p.pricingBasis,
     price: centsToInput(p.pricingBasis === 'M2' ? p.priceM2Cents : p.priceBoxCents),
+    priceBcv: p.hasBcvPrice ? centsToInput(p.pricingBasis === 'M2' ? p.priceBcvM2Cents : p.priceBcvBoxCents) : '',
     finish: p.finish,
+    finishNote: p.finishNote ?? '',
+    slipRating: p.slipRating ?? '',
+    usageGuide: (p.usageGuide as UsageGuide | null) ?? null,
     antiSlip: p.antiSlip,
     status: p.status,
     featured: p.featured,
@@ -198,6 +217,8 @@ export function AdminProductEdit() {
     const body = {
       ...form,
       price: form.price.replace(',', '.'),
+      priceBcv: form.priceBcv ? form.priceBcv.replace(',', '.') : null,
+      slipRating: form.slipRating || null,
       boxAreaM2: form.boxAreaM2.replace(',', '.'),
       thicknessMm: form.thicknessMm ? form.thicknessMm.replace(',', '.') : null,
       widthCm: form.widthCm.replace(',', '.'),
@@ -219,6 +240,7 @@ export function AdminProductEdit() {
       <Link to="/admin/productos" className="text-sm text-ink-muted hover:text-ink">
         ← Productos
       </Link>
+      {!isNew && product.data?.sourceNote && <Alert kind={product.data.status === 'DRAFT' ? 'warning' : 'info'} className="mb-4">{product.data.sourceNote}</Alert>}
       <PageHeader title={isNew ? 'Nuevo producto' : form.name || 'Producto'} subtitle={!isNew && product.data ? `Última modificación: ${formatDateTime(product.data.updatedAt)} · creado ${formatDateTime(product.data.createdAt)}` : undefined} />
       <div className="grid gap-6 xl:grid-cols-3">
         <form onSubmit={submit} className="card space-y-5 p-6 xl:col-span-2" noValidate>
@@ -266,6 +288,48 @@ export function AdminProductEdit() {
               <input id="p-price" className="input" inputMode="decimal" value={form.price} onChange={(e) => set('price', e.target.value)} />
             </Field>
           </div>
+          <Field label={`Precio BCV en USD ${form.pricingBasis === 'M2' ? 'por m²' : 'por caja'} (pago en bolívares)`} htmlFor="p-bcv" error={fields.priceBcv} hint="Opcional. Vacío = se cobra el mismo precio en divisas también al pagar en Bs.">
+            <input id="p-bcv" className="input max-w-xs" inputMode="decimal" value={form.priceBcv} onChange={(e) => set('priceBcv', e.target.value)} />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Clasificación de agarre" htmlFor="p-slip">
+              <select id="p-slip" className="input" value={form.slipRating} onChange={(e) => set('slipRating', e.target.value as FormState['slipRating'])}>
+                <option value="">Sin clasificar</option>
+                {SLIP_RATINGS.map((r) => (
+                  <option key={r} value={r}>
+                    {SLIP_RATING_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Nota de acabado" htmlFor="p-fnote">
+              <input id="p-fnote" className="input" value={form.finishNote} onChange={(e) => set('finishNote', e.target.value)} />
+            </Field>
+          </div>
+          <fieldset>
+            <legend className="label">Guía de uso por ambiente</legend>
+            {form.usageGuide ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {USAGE_AREAS.map((a) => (
+                  <label key={a} className="flex items-center justify-between gap-2 border border-stone-200 px-3 py-2 text-sm">
+                    {USAGE_AREA_LABELS[a]}
+                    <select className="border-0 bg-transparent text-xs" value={form.usageGuide![a]} onChange={(e) => set('usageGuide', { ...form.usageGuide!, [a]: e.target.value as UsageLevel })} aria-label={`Uso en ${USAGE_AREA_LABELS[a]}`}>
+                      <option value="YES">Recomendado</option>
+                      <option value="CAUTION">Precaución</option>
+                      <option value="NO">No recomendado</option>
+                    </select>
+                  </label>
+                ))}
+                <button type="button" className="btn-ghost btn-sm justify-start" onClick={() => set('usageGuide', null)}>
+                  Quitar guía
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="btn-outline btn-sm" onClick={() => set('usageGuide', { salas: 'YES', cocina: 'CAUTION', pisoBano: 'CAUTION', ducha: 'NO', exterior: 'NO', paredes: 'YES' })}>
+                Agregar guía de uso
+              </button>
+            )}
+          </fieldset>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Acabado" htmlFor="p-fin">
               <select id="p-fin" className="input" value={form.finish} onChange={(e) => set('finish', e.target.value as FormState['finish'])}>

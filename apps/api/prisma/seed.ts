@@ -1,9 +1,11 @@
 /**
- * Semilla controlada.
- *  - Base (siempre): categorías de ambientes, usuario administrador (desde variables de entorno)
- *    y métodos de pago INACTIVOS sin datos bancarios (deben configurarse en el panel).
- *  - --demo: vendedores y productos de demostración identificados (SKU "DEMO-", isDemo=true).
- *    No crea tasas BCV, números de WhatsApp ni datos comerciales reales.
+ * Semilla controlada e idempotente.
+ *  - Base: categorías, administrador (variables de entorno) y métodos de pago SIN datos de recepción
+ *    (aparecen como "pendiente de configuración" hasta que el administrador los completa).
+ *  - Negocio (siempre): vendedor Juan Alarcon (sede Barinas), WhatsApp de la sede y catálogo
+ *    importado del PDF (72 productos, existencias en 0).
+ *  - --demo: vendedores y productos de demostración (SKU "DEMO-"). Sin --demo, se desactivan.
+ *    No crea tasas BCV ni datos bancarios.
  */
 import { PrismaClient, type Finish, type AntiSlip } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
@@ -12,32 +14,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { marblePng } from './texture';
+import { disableDemoData, ensureCategories, ensurePaymentMethods, ensureSeller, ensureStoreDefaults, importCatalog } from '../src/seed/business';
 
 const prisma = new PrismaClient();
 const demo = process.argv.includes('--demo');
 const ARGON = { memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
 
-const CATEGORIES = [
-  { name: 'Baño', slug: 'bano' },
-  { name: 'Cocina', slug: 'cocina' },
-  { name: 'Sala', slug: 'sala' },
-  { name: 'Habitación', slug: 'habitacion' },
-  { name: 'Exteriores', slug: 'exteriores' },
-  { name: 'Otras', slug: 'otras' },
-];
-
-const METHODS = [
-  { kind: 'PAGO_MOVIL', name: 'Pago Móvil', currency: 'VES' },
-  { kind: 'ZELLE', name: 'Zelle', currency: 'USD' },
-  { kind: 'BINANCE', name: 'Binance Pay', currency: 'USD' },
-  { kind: 'BANK_TRANSFER', name: 'Transferencia bancaria', currency: 'VES' },
-  { kind: 'CASH', name: 'Efectivo en sede', currency: 'USD' },
-] as const;
-
 async function seedBase() {
-  for (const [i, c] of CATEGORIES.entries()) {
-    await prisma.category.upsert({ where: { slug: c.slug }, create: { ...c, sortOrder: i }, update: {} });
-  }
+  await ensureCategories(prisma);
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD ?? '';
   if (email) {
@@ -52,20 +36,17 @@ async function seedBase() {
   } else {
     console.warn('SEED_ADMIN_EMAIL no definido: no se creó administrador');
   }
-  if ((await prisma.paymentMethod.count()) === 0) {
-    for (const [i, m] of METHODS.entries()) {
-      await prisma.paymentMethod.create({
-        data: {
-          ...m,
-          instructions: 'PENDIENTE DE CONFIGURAR: el administrador debe escribir los datos de pago antes de activar este método.',
-          requiresProof: m.kind !== 'CASH',
-          active: false,
-          sortOrder: i,
-        },
-      });
-    }
-    console.log('Métodos de pago creados (inactivos, pendientes de configuración)');
-  }
+  await ensurePaymentMethods(prisma);
+}
+
+async function seedBusiness() {
+  const { seller, pendingActivation } = await ensureSeller(prisma);
+  console.log(`Vendedor: ${seller.displayName} (${seller.publicEmail}) · WhatsApp ${seller.whatsapp} · activo`);
+  if (pendingActivation) console.log('  Cuenta pendiente de activación: npm run user:activation-link -- alarconbravocontact@gmail.com');
+  await ensureStoreDefaults(prisma, seller.whatsapp);
+  const publicDir = path.resolve(process.cwd(), process.env.STORAGE_DIR ?? './storage', 'public');
+  const r = await importCatalog(prisma, path.resolve(import.meta.dirname, 'data'), publicDir);
+  console.log(`Catálogo Barinas: ${r.created} creados, ${r.skipped} ya existían, ${r.images} imágenes, ${r.drafts.length} en borrador por verificar caja`);
 }
 
 interface DemoProduct {
@@ -156,13 +137,18 @@ async function seedDemo() {
   }
   // Métodos de pago de demostración claramente identificados.
   await prisma.paymentMethod.updateMany({
-    where: { instructions: { startsWith: 'PENDIENTE DE CONFIGURAR' } },
-    data: { instructions: 'DEMOSTRACIÓN: no realice pagos reales. Reemplace este texto por los datos de pago de la tienda.', active: true },
+    where: { receivingDetails: '', kind: { not: 'CASH' } },
+    data: { receivingDetails: 'DEMOSTRACIÓN: datos ficticios, no realice pagos reales.', active: true },
   });
 }
 
 seedBase()
-  .then(() => (demo ? seedDemo() : undefined))
+  .then(() => seedBusiness())
+  .then(async () => {
+    if (demo) return seedDemo();
+    const r = await disableDemoData(prisma);
+    if (r.products || r.sellers) console.log(`Datos de demostración desactivados: ${r.products} productos, ${r.sellers} vendedores`);
+  })
   .then(() => console.log('Semilla completada'))
   .catch((e) => {
     console.error(e);
