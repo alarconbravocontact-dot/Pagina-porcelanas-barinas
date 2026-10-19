@@ -37,6 +37,7 @@ export const TOURS: Tour[] = [
       { target: ['section[aria-labelledby="proceso"]'], title: 'Cómo funciona', body: 'Eliges, registras tu orden, pagas con el método que prefieras y retiras en la sede de Barinas.' },
       { target: ['section[aria-labelledby="vendedor"]'], title: 'Tu vendedor', body: 'Cada compra la atiende un vendedor. Aquí ves sus datos y puedes escribirle por WhatsApp.' },
       { target: ['header a[href="/carrito"]'], title: 'Carrito', body: 'Los productos que agregues quedan guardados aquí aunque cierres la página.' },
+      { target: ['[data-tour="assistant"]'], title: 'Asistente virtual', body: 'Pregúntale por piezas, cuántas cajas necesitas, el horario, los pagos o el estado de tu orden. Responde con los datos de la tienda.' },
       { target: ['[data-tour="whatsapp-floating"]'], title: 'WhatsApp siempre a mano', body: 'Este botón abre una conversación con el número comercial desde cualquier ventana.' },
     ],
   },

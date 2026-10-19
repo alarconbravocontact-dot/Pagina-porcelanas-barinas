@@ -80,6 +80,10 @@ Ver [.env.example](.env.example). Ninguna contiene secretos por defecto.
 | `JOBS_ENABLED`, `JOBS_INTERVAL_SECONDS` | Tareas: vencimiento de reservas, retiros vencidos, consulta de tasa |
 | `RATE_LIMIT_MAX` | Solicitudes por minuto e IP |
 | `WEB_DIST_DIR` | Ruta del frontend compilado (opcional) |
+| `ASSISTANT_PROVIDER` | Asistente virtual: `auto` (Claude si hay `ANTHROPIC_API_KEY`, si no el motor integrado), `claude` o `local` |
+| `ANTHROPIC_API_KEY` | Clave de la API de Anthropic (opcional, se factura por uso) |
+| `ASSISTANT_MODEL`, `ASSISTANT_EFFORT` | Modelo (`claude-opus-5-5`) y esfuerzo (`low`) del asistente con Claude |
+| `ASSISTANT_RATE_LIMIT_PER_MIN` | Mensajes al asistente por minuto e IP (por defecto 15) |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_DEMO_PASSWORD` | Solo para las semillas |
 
 ## Integraciones externas pendientes
@@ -87,3 +91,4 @@ Ver [.env.example](.env.example). Ninguna contiene secretos por defecto.
 - **Pasarelas de pago**: no existen APIs oficiales integradas. Pago Móvil, Zelle, Binance, transferencia y efectivo funcionan con **verificación manual** real; nunca se confirman automáticamente.
 - **WhatsApp**: botón `wa.me` con mensaje prellenado; requiere configurar el número. No se usa la API de WhatsApp Business.
 - No se envían correos ni SMS; las notificaciones son internas (campana y tiempo real).
+- **Asistente virtual**: funciona sin configuración con un motor integrado que reconoce las consultas frecuentes (catálogo por uso, color o formato; cálculo de cajas; horario; sede; métodos de pago; tasa; prepago; cancelaciones; vendedor; estado de las órdenes propias). Con `ANTHROPIC_API_KEY` responde con Claude, que consulta los mismos datos mediante herramientas de solo lectura (`apps/api/src/services/assistant/`); si la API falla, responde el motor integrado. La integración con Claude está probada con un cliente simulado, **no con la API real** (no hay clave en el entorno de desarrollo). Las conversaciones no se guardan en el servidor; nunca da datos de recepción de pagos ni cédulas.

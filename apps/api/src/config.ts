@@ -25,6 +25,11 @@ const envSchema = z.object({
   JOBS_INTERVAL_SECONDS: z.coerce.number().int().min(5).default(60),
   WEB_DIST_DIR: z.string().optional(),
   RATE_LIMIT_MAX: z.coerce.number().int().default(300),
+  /** Asistente virtual: auto = Claude si hay ANTHROPIC_API_KEY; si no, motor integrado. */
+  ASSISTANT_PROVIDER: z.enum(['auto', 'claude', 'local']).default('auto'),
+  ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
+  ASSISTANT_EFFORT: z.enum(['low', 'medium', 'high']).default('low'),
+  ASSISTANT_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(15),
 });
 
 const parsed = envSchema.safeParse(process.env);

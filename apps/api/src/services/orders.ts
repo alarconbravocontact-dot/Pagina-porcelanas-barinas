@@ -46,7 +46,7 @@ export const orderInclude = {
 export type OrderFull = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
 /** Estado de revisión para el comprador: método elegido ≠ pago recibido ≠ pago aprobado. */
-export function paymentReviewState(o: Pick<OrderFull, 'paymentStatus' | 'payments'>) {
+export function paymentReviewState(o: { paymentStatus: OrderFull['paymentStatus']; payments: Pick<OrderFull['payments'][number], 'status' | 'reviewStartedAt'>[] }) {
   if (o.paymentStatus === 'PAID') return 'APPROVED' as const;
   const pending = o.payments.filter((p) => p.status === 'PENDING');
   if (pending.some((p) => p.reviewStartedAt)) return 'IN_REVIEW' as const;

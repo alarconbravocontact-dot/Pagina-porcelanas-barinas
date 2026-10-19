@@ -6,6 +6,7 @@ import { useCart, useSettings } from '../hooks/data';
 import { NotificationsBell } from './NotificationsBell';
 import { WhatsAppButton } from './WhatsAppButton';
 import { GuidedTour } from './GuidedTour';
+import { AssistantChat } from './AssistantChat';
 import { useEffect } from 'react';
 
 function Logo({ name }: { name: string }) {
@@ -167,6 +168,7 @@ export function Layout() {
       <Footer storeName={storeName} />
       <WhatsAppButton variant="floating" />
       <GuidedTour />
+      <AssistantChat />
     </div>
   );
 }

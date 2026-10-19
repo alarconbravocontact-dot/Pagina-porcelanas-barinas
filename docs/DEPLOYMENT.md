@@ -48,3 +48,4 @@ Socket.IO funciona en un solo proceso. Para varias instancias se requiere un ada
 - [ ] Respaldos automáticos de PostgreSQL y de `STORAGE_DIR`.
 - [ ] Monitoreo de logs y de `/api/health`.
 - [ ] Revisión de las advertencias de `npm audit` (ver PROGRESS_LOG).
+- [ ] Asistente virtual: decidir si se usa Claude (`ANTHROPIC_API_KEY`, con límite de gasto en la consola de Anthropic) o el motor integrado, y probarlo con preguntas reales de clientes.

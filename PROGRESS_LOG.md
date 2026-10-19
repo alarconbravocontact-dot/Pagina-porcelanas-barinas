@@ -89,3 +89,11 @@
 - Bug evitado (detectado al probar): si se pulsaba el botón justo al cargar la ventana, el recorrido se cerraba solo.
 - Script `e2e/capture/tours.mjs` (`npm run capture:tours`) que captura cada paso de cada recorrido (89 pasos en escritorio y móvil, revisados uno por uno).
 - Pruebas: shared 18/18, API 73/73, web 13/13 (3 nuevas), E2E 18/18 (3 nuevas: botón y pasos, inicio automático y su desactivación, recorrido en el teléfono).
+
+## 2026-10-19 — Asistente virtual (chat bot)
+- **Ventana de chat** («Asistente», abajo a la derecha) en el sitio público y el área del cliente; no aparece en los paneles del personal. Sugerencias rápidas, tarjetas de producto con enlace, botones de acción (WhatsApp de Juan, ver la orden, catálogo filtrado), indicador de escritura, nueva conversación, historial en la pestaña (sessionStorage) y diseño adaptado al teléfono. Paso nuevo en el recorrido guiado del inicio.
+- **Datos reales, solo lectura** (`apps/api/src/services/assistant/tools.ts`): búsqueda en el catálogo por texto, uso, color y formato; ficha con guía de uso; cálculo de cajas con el mismo redondeo del carrito, precio BCV y bolívares; sede, horario, días de retiro, prepago, cancelaciones, métodos de pago activos (sin datos de recepción), tasa vigente y vendedores; órdenes del propio cliente con sesión (sin cédula).
+- **Dos motores**: integrado (sin costo ni servicios externos; reconoce las consultas frecuentes y deriva lo demás al vendedor) y Claude (`claude-opus-5-5`, esfuerzo bajo, herramientas, `fallbacks: "default"`), que se activa con `ANTHROPIC_API_KEY`. Si Claude falla, responde el integrado. Límite de 15 mensajes por minuto e IP. Las conversaciones no se guardan.
+- Revisado con el catálogo real de Barinas (18 preguntas tipo) y corregido: doble punto en el horario, prioridad de «pagar después» y «cancelar mi pedido», búsquedas sin coincidencias que devolvían el catálogo completo, consulta de envíos.
+- **No verificado**: la integración con la API real de Claude (no hay clave en el entorno); está probada con un cliente simulado.
+- Pruebas: shared 18/18, API 81/81 (8 nuevas), web 15/15 (2 nuevas), E2E 19/19 (1 nueva).
