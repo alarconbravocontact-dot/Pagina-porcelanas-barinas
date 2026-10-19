@@ -174,7 +174,7 @@ function Footer({ storeName }: { storeName: string }) {
   const store = data?.store;
   return (
     <footer className="mt-24 border-t border-stone-200 bg-white text-ink-soft">
-      <div className="container-page grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-page grid grid-cols-1 gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="font-display text-2xl font-light text-ink">{storeName}</p>
           {store?.tagline && <p className="mt-2 text-sm text-ink-muted">{store.tagline}</p>}

@@ -108,7 +108,7 @@ export function PaymentForm({ order }: { order: Order }) {
           </p>
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={`Importe pagado (${method?.currency === 'VES' ? 'Bs' : 'USD'})`} htmlFor="pf-amount" error={fields.amount}>
           <input id="pf-amount" className="input" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" />
         </Field>

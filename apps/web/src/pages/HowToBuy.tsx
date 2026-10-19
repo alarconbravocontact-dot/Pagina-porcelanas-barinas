@@ -51,7 +51,7 @@ export function HowToBuyPage() {
   return (
     <div className="container-page max-w-4xl py-10">
       <PageHeader title="Cómo comprar" subtitle="Compra con retiro programado o prepago y retiro posterior en la sede." />
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="card p-6">
           <h2 className="text-xl">Compra con retiro programado</h2>
           <ul className="mt-3 space-y-2 text-sm text-ink-soft">
@@ -72,7 +72,7 @@ export function HowToBuyPage() {
       {p && (
         <div className="card mt-6 p-6">
           <h2 className="text-xl">Días y horarios de retiro</h2>
-          <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
+          <ul className="mt-3 grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
             {p.weekdays.map((d, i) => (
               <li key={i} className="flex justify-between border-b border-stone-100 py-1.5">
                 <span>{WEEKDAY_LABELS[i]}</span>

@@ -70,7 +70,7 @@ export function CustomerProfileForm({
       <Field label="Nombre completo" htmlFor="cp-name" error={fields.fullName}>
         <input id="cp-name" className="input text-base" autoComplete="name" value={form.fullName} onChange={set('fullName')} placeholder="Nombre y apellido" />
       </Field>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Ciudad" htmlFor="cp-city" error={fields.city}>
           <input id="cp-city" className="input text-base" autoComplete="address-level2" value={form.city} onChange={set('city')} placeholder="Ej.: Barinas" />
         </Field>
@@ -78,7 +78,7 @@ export function CustomerProfileForm({
           <input id="cp-addr" className="input text-base" autoComplete="street-address" value={form.addressRef} onChange={set('addressRef')} placeholder="Urbanización, sector o punto de referencia" />
         </Field>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Teléfono" htmlFor="cp-phone" error={fields.phone} hint="Con código de país si no es de Venezuela.">
           <input id="cp-phone" className="input text-base" type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={set('phone')} placeholder="0412 1234567" />
         </Field>

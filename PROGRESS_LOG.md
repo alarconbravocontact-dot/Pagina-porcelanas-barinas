@@ -69,3 +69,9 @@
 ### Pendiente
 - Datos de recepción de los métodos de pago, existencias, activación de la cuenta de Juan, tasa BCV y datos de la sede (sin cambios respecto al bloque anterior).
 - Cifrado en reposo de la cédula (hoy protegida por control de acceso, enmascarado y auditoría): requiere definir y custodiar una clave de cifrado.
+
+## 2026-10-19 — Recorrido visual
+- Script `e2e/capture/capture.mjs` (+ `start-server.sh`) que recorre la aplicación real como administrador, cliente y vendedor y captura 44 pantallas (escritorio y móvil).
+- Bug corregido al revisar las capturas: en móvil, las grillas de dos columnas se ensanchaban hasta el ancho mínimo de la tabla de productos y provocaban desplazamiento horizontal en el detalle de la orden. Se añadió `grid-cols-1` base a 55 grillas y una verificación en la prueba E2E.
+- Etiqueta "Número de operación" → "Número de orden" en el detalle del cliente.
+- Pruebas: shared 17/17, API 72/72, web 10/10, E2E 15/15.

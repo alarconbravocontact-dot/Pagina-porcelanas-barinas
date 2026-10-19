@@ -57,6 +57,8 @@ npm run typecheck
 npm test            # shared (unitarias) + API (integración, PostgreSQL real) + web (unitarias)
 npm run build && npm run test:e2e   # Playwright: compra completa, revisión de pago, vendedor, 404, recuperación de errores, responsive
 ```
+Capturas de todas las pantallas: `npm run build`, `bash e2e/capture/start-server.sh` (servidor en :4200 con base nueva y datos del negocio) y `npm run capture -- <carpeta>`.
+
 Variables opcionales para pruebas: `TEST_ADMIN_DATABASE_URL` y `E2E_ADMIN_DATABASE_URL` (por defecto `postgresql://porcelana:porcelana@localhost:5432/postgres`).
 
 ## Variables de entorno

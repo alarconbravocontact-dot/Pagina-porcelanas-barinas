@@ -108,6 +108,10 @@ test.describe.serial('flujo completo de compra', () => {
     await expect(page.getByText('Calacatta Blanco (demo)').first()).toBeVisible();
     await page.reload();
     await expect(page.getByRole('heading', { name: code })).toBeVisible();
+    // En el teléfono el detalle no debe desbordar horizontalmente (la tabla se desplaza dentro de su tarjeta).
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.setViewportSize({ width: 1280, height: 720 });
     // Reutilización del perfil: una nueva compra no vuelve a pedir los datos.
     await page.goto('/producto/DEMO-GRI-6060');
     await page.getByRole('radio', { name: 'Cajas' }).click();

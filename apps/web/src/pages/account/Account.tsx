@@ -71,7 +71,7 @@ export function AccountHome() {
   const active = orders.data!.filter((o) => ['PENDING_PAYMENT', 'CONFIRMED', 'READY_FOR_PICKUP'].includes(o.status));
   const sellers = [...new Map(orders.data!.map((o) => [o.seller.id, o.seller])).values()];
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2">
         <h2 className="text-xl">Operaciones activas</h2>
         {active.length === 0 ? (
@@ -202,7 +202,7 @@ export function AccountOrderDetail() {
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-ink-muted">Número de operación</p>
+          <p className="text-xs uppercase tracking-wide text-ink-muted">Número de orden</p>
           <h1 className="font-mono text-2xl font-semibold">{o.code}</h1>
           <div className="mt-2">
             <OrderHeader order={o} />
@@ -222,7 +222,7 @@ export function AccountOrderDetail() {
           <WhatsAppButton variant="link" number={o.seller.whatsapp} message={visitMessage(o)} label="Escribir por WhatsApp" />
         </Alert>
       )}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <section className="card p-5">
             <h2 className="mb-3 text-lg">Productos</h2>
@@ -443,7 +443,7 @@ export function AccountChat() {
     if (!id && convs.data?.length && window.innerWidth >= 1024) navigate(`/cuenta/chat/${convs.data[0]!.id}`, { replace: true });
   }, [id, convs.data, navigate]);
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
       <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`}>
         <div className="border-b border-stone-200 p-4">
           <p className="text-sm font-semibold">Nueva conversación</p>
@@ -503,7 +503,7 @@ export function AccountProfile() {
   if (profile.isLoading) return <Spinner />;
   if (profile.isError) return <ErrorState error={profile.error} onRetry={() => profile.refetch()} />;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <section className="card p-6">
         <h2 className="mb-1 text-2xl">Tus datos</h2>
         <p className="mb-5 text-sm text-ink-muted">Se usan en tus órdenes de compra. Cédula registrada: {profile.data?.documentMasked || '—'}.</p>

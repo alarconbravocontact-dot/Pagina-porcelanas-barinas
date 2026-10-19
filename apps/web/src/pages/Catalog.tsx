@@ -152,7 +152,7 @@ export function CatalogPage() {
           </select>
         </div>
       </div>
-      <div className="mt-10 grid gap-10 lg:grid-cols-[240px_1fr]">
+      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[240px_1fr]">
         <aside className={`${showFilters ? 'block' : 'hidden'} h-fit border-b border-stone-200 pb-6 lg:block lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8`} aria-label="Filtros">
           {facets.isError ? <p className="text-sm text-red-700">No se pudieron cargar los filtros.</p> : filters}
         </aside>
@@ -168,7 +168,7 @@ export function CatalogPage() {
               {list.data.items.length === 0 ? (
                 <EmptyState title="No encontramos productos con esos filtros">Prueba con otros criterios o limpia los filtros.</EmptyState>
               ) : (
-                <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
                   {list.data.items.map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}

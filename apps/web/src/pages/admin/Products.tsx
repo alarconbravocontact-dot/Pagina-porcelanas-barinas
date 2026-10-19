@@ -242,11 +242,11 @@ export function AdminProductEdit() {
       </Link>
       {!isNew && product.data?.sourceNote && <Alert kind={product.data.status === 'DRAFT' ? 'warning' : 'info'} className="mb-4">{product.data.sourceNote}</Alert>}
       <PageHeader title={isNew ? 'Nuevo producto' : form.name || 'Producto'} subtitle={!isNew && product.data ? `Última modificación: ${formatDateTime(product.data.updatedAt)} · creado ${formatDateTime(product.data.createdAt)}` : undefined} />
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <form onSubmit={submit} className="card space-y-5 p-6 xl:col-span-2" noValidate>
           {save.isSuccess && <Alert kind="success">Producto guardado.</Alert>}
           {save.isError && <Alert kind="error">{errorMessage(save.error)}</Alert>}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="SKU" htmlFor="p-sku" error={fields.sku}>
               <input id="p-sku" className="input uppercase" value={form.sku} onChange={(e) => set('sku', e.target.value)} />
             </Field>
@@ -257,7 +257,7 @@ export function AdminProductEdit() {
           <Field label="Descripción" htmlFor="p-desc" error={fields.description}>
             <textarea id="p-desc" className="input min-h-[90px]" value={form.description} onChange={(e) => set('description', e.target.value)} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <Field label="Color" htmlFor="p-color" error={fields.color}>
               <input id="p-color" className="input" value={form.color} onChange={(e) => set('color', e.target.value)} />
             </Field>
@@ -271,7 +271,7 @@ export function AdminProductEdit() {
               <input id="p-t" className="input" inputMode="decimal" value={form.thicknessMm} onChange={(e) => set('thicknessMm', e.target.value)} />
             </Field>
           </div>
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <Field label="Piezas por caja" htmlFor="p-pcs" error={fields.piecesPerBox}>
               <input id="p-pcs" className="input" inputMode="numeric" value={form.piecesPerBox} onChange={(e) => set('piecesPerBox', e.target.value)} />
             </Field>
@@ -291,7 +291,7 @@ export function AdminProductEdit() {
           <Field label={`Precio BCV en USD ${form.pricingBasis === 'M2' ? 'por m²' : 'por caja'} (pago en bolívares)`} htmlFor="p-bcv" error={fields.priceBcv} hint="Opcional. Vacío = se cobra el mismo precio en divisas también al pagar en Bs.">
             <input id="p-bcv" className="input max-w-xs" inputMode="decimal" value={form.priceBcv} onChange={(e) => set('priceBcv', e.target.value)} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Clasificación de agarre" htmlFor="p-slip">
               <select id="p-slip" className="input" value={form.slipRating} onChange={(e) => set('slipRating', e.target.value as FormState['slipRating'])}>
                 <option value="">Sin clasificar</option>
@@ -309,7 +309,7 @@ export function AdminProductEdit() {
           <fieldset>
             <legend className="label">Guía de uso por ambiente</legend>
             {form.usageGuide ? (
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {USAGE_AREAS.map((a) => (
                   <label key={a} className="flex items-center justify-between gap-2 border border-stone-200 px-3 py-2 text-sm">
                     {USAGE_AREA_LABELS[a]}
@@ -330,7 +330,7 @@ export function AdminProductEdit() {
               </button>
             )}
           </fieldset>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Acabado" htmlFor="p-fin">
               <select id="p-fin" className="input" value={form.finish} onChange={(e) => set('finish', e.target.value as FormState['finish'])}>
                 {FINISHES.map((x) => (
@@ -376,7 +376,7 @@ export function AdminProductEdit() {
             </div>
             {fields.categoryIds && <p className="mt-1 text-xs font-medium text-red-700">{fields.categoryIds}</p>}
           </fieldset>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Alerta de stock bajo (cajas)" htmlFor="p-low" error={fields.lowStockThreshold}>
               <input id="p-low" className="input" inputMode="numeric" value={form.lowStockThreshold} onChange={(e) => set('lowStockThreshold', e.target.value)} />
             </Field>

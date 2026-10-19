@@ -13,7 +13,7 @@ export function ContactPage() {
   return (
     <div className="container-page max-w-5xl py-12">
       <PageHeader title="Contacto comercial" subtitle="Asesoría, cotizaciones y seguimiento de tus operaciones." />
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {sellers.isLoading && <Spinner />}
         {sellers.isError && <ErrorState error={sellers.error} onRetry={() => sellers.refetch()} />}
         {sellers.data?.map((s) => (
@@ -33,7 +33,7 @@ export function ContactPage() {
           )}
         </div>
       </div>
-      <section className="mt-12 grid gap-6 border-t border-stone-200 pt-10 md:grid-cols-2">
+      <section className="mt-12 grid grid-cols-1 gap-6 border-t border-stone-200 pt-10 md:grid-cols-2">
         <div>
           <h2 className="text-2xl">WhatsApp</h2>
           <p className="mt-2 text-sm text-ink-soft">Para consultas rápidas antes de comprar: disponibilidad, cantidades o dudas sobre un producto. Los mensajes llevan el contexto de lo que estás viendo.</p>

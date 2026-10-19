@@ -79,7 +79,7 @@ export function AdminSellers() {
     <div>
       <PageHeader title="Vendedores" subtitle="Solo los vendedores activos aparecen en el selector obligatorio del checkout." />
       {q.data?.filter((s) => s.active).length === 0 && <Alert kind="warning" className="mb-4">No hay vendedores activos: los clientes no pueden confirmar operaciones.</Alert>}
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-3 xl:col-span-2">
           {q.isLoading && <Spinner />}
           {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
@@ -295,7 +295,7 @@ export function AdminRates() {
   return (
     <div>
       <PageHeader title="Tasa BCV" subtitle="Cada cotización y operación guarda la tasa utilizada. Las operaciones confirmadas conservan su tasa original." />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-4">
           <section className="card p-5">
             <h2 className="text-lg">Tasa vigente</h2>
@@ -396,7 +396,7 @@ export function AdminPaymentMethods() {
       <PageHeader title="Métodos de pago" subtitle="Las instrucciones se muestran a los clientes al pagar. Solo los métodos activos se ofrecen." actions={<button type="button" className="btn-primary" onClick={() => setEditing({ id: '', kind: 'PAGO_MOVIL', name: '', currency: 'VES', instructions: '', receivingDetails: '', buyerNote: '', proofInstructions: '', requiresProof: true, configured: false, active: false, sortOrder: 0 })}>Nuevo método</button>} />
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           {q.data?.map((m) => (
             <button key={m.id} type="button" onClick={() => setEditing(m)} className={`card block w-full p-4 text-left hover:border-ink ${editing?.id === m.id ? 'border-ink' : ''}`}>
@@ -440,7 +440,7 @@ function MethodForm({ method, onDone }: { method: PaymentMethod; onDone: () => v
     >
       <h2 className="text-lg">{method.id ? 'Editar método' : 'Nuevo método'}</h2>
       {save.isError && <Alert kind="error">{errorMessage(save.error)}</Alert>}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Tipo" htmlFor="m-kind">
           <select id="m-kind" className="input" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as PaymentMethod['kind'] })}>
             {PAYMENT_METHOD_KINDS.map((k) => (

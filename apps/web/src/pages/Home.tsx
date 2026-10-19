@@ -61,7 +61,7 @@ export function HomePage() {
             <EmptyState title="La colección aún no está expuesta">El catálogo se mostrará aquí cuando la tienda publique sus productos.</EmptyState>
           </div>
         )}
-        <div className="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
           {showcase.slice(0, 8).map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
@@ -70,7 +70,7 @@ export function HomePage() {
 
       {calcProduct && (
         <section className="border-y border-stone-200 bg-stone-50" aria-labelledby="calculadora">
-          <div className="container-page grid gap-12 py-24 lg:grid-cols-2">
+          <div className="container-page grid grid-cols-1 gap-12 py-24 lg:grid-cols-2">
             <div>
               <p className="eyebrow">Calculadora</p>
               <h2 id="calculadora" className="mt-4 text-4xl sm:text-5xl">
@@ -143,7 +143,7 @@ function Hero({ heroUrl, piece, tagline }: { heroUrl?: string; piece?: Product; 
   };
   return (
     <section className="border-b border-stone-200">
-      <div className="container-page grid items-center gap-16 py-20 lg:grid-cols-12 lg:py-28">
+      <div className="container-page grid grid-cols-1 items-center gap-16 py-20 lg:grid-cols-12 lg:py-28">
         <div className="lg:col-span-5">
           <p className="eyebrow">Galería de porcelanatos · retiro en sede</p>
           <h1 className="mt-6 text-5xl leading-[1.02] sm:text-6xl lg:text-7xl">Superficies en silencio.</h1>
@@ -214,7 +214,7 @@ function ProcessSection() {
   ];
   return (
     <section className="container-page py-24" aria-labelledby="proceso">
-      <div className="grid gap-12 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <p className="eyebrow">Procedimiento</p>
           <h2 id="proceso" className="mt-3 text-4xl sm:text-5xl">
@@ -229,7 +229,7 @@ function ProcessSection() {
             Subir un comprobante no confirma el pago: el equipo lo verifica manualmente y te notifica el resultado.
           </p>
         </div>
-        <ol className="grid border-l border-t border-stone-200 sm:grid-cols-2 lg:col-span-8">
+        <ol className="grid grid-cols-1 border-l border-t border-stone-200 sm:grid-cols-2 lg:col-span-8">
           {steps.map((s, i) => (
             <li key={s.title} className="border-b border-r border-stone-200 p-8">
               <div className="flex items-center justify-between">
@@ -251,7 +251,7 @@ function SellerSection() {
   return (
     <section className="border-t border-stone-200 bg-stone-50" aria-labelledby="vendedor">
       <div className="container-page py-24">
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <div>
           <p className="eyebrow">Atención personal</p>
           <h2 id="vendedor" className="mt-3 text-4xl sm:text-5xl">
@@ -316,7 +316,7 @@ function StoreSection() {
   if (!s?.address) return null;
   return (
     <section className="container-page pb-8" aria-labelledby="sede">
-      <div className="grid gap-10 border border-stone-200 p-10 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-10 border border-stone-200 p-10 md:grid-cols-2">
         <div>
           <h2 id="sede" className="text-4xl">
             Visítanos en la sede

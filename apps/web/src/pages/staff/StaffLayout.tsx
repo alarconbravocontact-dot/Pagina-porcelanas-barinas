@@ -34,7 +34,7 @@ export function StaffLayout({ area }: { area: 'seller' | 'admin' }) {
         ];
   return (
     <div className="container-page py-6">
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
         <aside>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-muted">{area === 'admin' ? 'Administración' : 'Panel de vendedor'}</p>
           <nav className="flex gap-1 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible" aria-label={area === 'admin' ? 'Administración' : 'Vendedor'}>

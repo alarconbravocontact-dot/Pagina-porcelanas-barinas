@@ -109,7 +109,7 @@ export function OrderProgress({ order }: { order: Order }) {
   const icon = (st: StepState) =>
     st === 'done' ? <CheckCircle2 className="h-5 w-5 text-ink" aria-hidden /> : st === 'current' ? <CircleDot className="h-5 w-5 text-ink" aria-hidden /> : st === 'failed' ? <XCircle className="h-5 w-5 text-[#7a3030]" aria-hidden /> : <Circle className="h-5 w-5 text-stone-300" aria-hidden />;
   return (
-    <ol className="grid gap-3 sm:grid-cols-5" aria-label="Progreso de la orden">
+    <ol className="grid grid-cols-1 gap-3 sm:grid-cols-5" aria-label="Progreso de la orden">
       {steps.map((st, i) => (
         <li key={i} className={`flex items-start gap-2 border-t-2 pt-3 sm:flex-col ${st.state === 'pending' ? 'border-stone-200 text-ink-muted' : st.state === 'failed' ? 'border-[#7a3030]' : 'border-ink'}`}>
           {icon(st.state)}

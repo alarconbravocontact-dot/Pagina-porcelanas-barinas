@@ -41,13 +41,13 @@ export function AdminDashboard() {
           </div>
         }
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Ventas (USD)" value={formatUSD(d.totals.salesUsdCents)} hint={`${d.totals.orders} operaciones confirmadas`} />
         <Stat label="m² vendidos" value={formatM2(d.totals.areaUnitsSold)} />
         <Stat label="Pagos por verificar" value={<Link to="/admin/pagos" className="hover:underline">{d.pendingPayments}</Link>} hint={`${d.pendingPaymentOrders} operaciones esperando pago`} />
         <Stat label="Pendientes de entrega" value={d.pendingDelivery} />
       </div>
-      <div className="mt-6 grid gap-6 xl:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="card p-5 xl:col-span-2">
           <h2 className="text-lg">Ventas diarias (USD)</h2>
           {d.dailySales.length === 0 ? (
@@ -122,7 +122,7 @@ export function AdminDashboard() {
           </section>
         </div>
       </div>
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="card p-5">
           <h2 className="text-lg">Retiros próximos (7 días)</h2>
           {d.upcomingPickups.length === 0 && <p className="mt-2 text-sm text-ink-muted">Sin retiros programados.</p>}

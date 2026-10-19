@@ -56,7 +56,7 @@ function CustomerStep({ onReady }: { onReady: (ready: boolean) => void }) {
   const p = profile.data!;
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="label">Nombre</dt>
           <dd>{p.fullName}</dd>
@@ -183,7 +183,7 @@ function CheckoutForm() {
   return (
     <div className="container-page py-8">
       <PageHeader title="Orden de compra" subtitle="Completa los pasos. El servidor valida inventario, precios, tasa y fecha antes de registrar tu orden." />
-      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
           <Step n={1} title="Tus datos">
             <CustomerStep onReady={setCustomerReady} />
@@ -194,7 +194,7 @@ function CheckoutForm() {
             {sellers.isLoading && <Spinner />}
             {sellers.isError && <ErrorState error={sellers.error} onRetry={() => sellers.refetch()} />}
             {noSellers && <Alert kind="error" title="No hay vendedores disponibles">No es posible confirmar operaciones sin un vendedor activo. Intente más tarde o contacte a la tienda.</Alert>}
-            <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Vendedor">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Vendedor">
               {sellers.data?.map((s) => (
                 <label key={s.id} className={`flex cursor-pointer items-start gap-3 rounded-none border p-4 ${sellerId === s.id ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
                   <input type="radio" name="seller" value={s.id} checked={sellerId === s.id} onChange={() => setSellerId(s.id)} className="mt-1 h-4 w-4" aria-label={s.displayName} />
@@ -216,7 +216,7 @@ function CheckoutForm() {
           </Step>
 
           <Step n={3} title="Modalidad y fecha de retiro" icon={<CalendarDays className="h-5 w-5" />}>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {(['PICKUP', 'PREPAY'] as const).map((t) => (
                 <label key={t} className={`cursor-pointer rounded-none border p-3 ${type === t ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
                   <span className="flex items-center gap-2">
@@ -270,7 +270,7 @@ function CheckoutForm() {
             {methods.isLoading && <Spinner />}
             {noMethods && <Alert kind="error">Ningún método de pago está configurado todavía. La tienda debe completar los datos de recepción antes de recibir pagos.</Alert>}
             <p className="mb-3 text-xs text-ink-muted">Elegir un método no registra ningún pago: después de confirmar realizarás el pago y adjuntarás el comprobante para su verificación.</p>
-            <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Método de pago">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Método de pago">
               {methods.data?.map((m) => (
                 <label
                   key={m.id}

@@ -91,7 +91,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
           {text('tagline', 'Lema o descripción breve')}
           {text('address', 'Dirección de la sede')}
           {text('city', 'Ciudad')}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {text('phone', 'Teléfono')}
             {text('email', 'Correo')}
           </div>
@@ -141,7 +141,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
             </tbody>
           </table>
           {Object.keys(fields).some((k) => k.startsWith('weekdays')) && <p className="text-xs text-red-700">Revise los horarios: la apertura debe ser anterior al cierre.</p>}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {num('capacityPerDay', 'Capacidad de retiros por día (operaciones)')}
             {num('minAdvanceHours', 'Anticipación mínima (horas)')}
             {num('maxDaysAheadPickup', 'Máx. días por adelantado (compra con retiro)')}
@@ -154,7 +154,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
     case 'reservation':
       body = (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {num('holdHours', 'Vigencia de la reserva sin pago (horas)', 'Al vencer, el inventario se libera automáticamente.')}
             {num('prepayMinPercent', 'Prepago mínimo (%)')}
             {num('pickupGraceDays', 'Tolerancia tras la fecha de retiro (días)')}
@@ -167,7 +167,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
     case 'cancellation':
       body = (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {num('customerCancelMinHours', 'Cancelación en línea: anticipación (h)')}
             {num('rescheduleMinHours', 'Cambio de fecha: anticipación (h)')}
             {num('maxReschedules', 'Máximo de cambios de fecha')}
@@ -184,7 +184,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
         <>
           {bool('autoFetch', 'Consultar automáticamente la fuente configurada')}
           {text('sourceUrl', 'URL de la fuente', 'Portal del BCV. Si no es accesible, use el registro manual.')}
-          <div className="grid gap-4 sm:grid-cols-2">{num('maxAgeHours', 'Considerar desactualizada después de (horas)')}</div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{num('maxAgeHours', 'Considerar desactualizada después de (horas)')}</div>
           {bool('blockWhenStale', 'Bloquear confirmaciones cuando la tasa esté desactualizada')}
         </>
       );

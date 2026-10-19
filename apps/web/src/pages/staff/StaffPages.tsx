@@ -189,7 +189,7 @@ export function StaffOrderDetail() {
       {active && (
         <input className="input mt-3 max-w-lg" placeholder="Observación para el cambio de estado (opcional / motivo de cancelación)" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Observación" />
       )}
-      <div className="mt-6 grid gap-6 xl:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <section className="card p-5">
             <h2 className="mb-3 text-lg">Productos y cantidades</h2>
@@ -331,7 +331,7 @@ function InPersonPayment({ order, onDone }: { order: Order; onDone: () => void }
     );
   return (
     <form
-      className="mt-3 grid gap-2 rounded-none bg-stone-50 p-3 sm:grid-cols-2"
+      className="mt-3 grid grid-cols-1 gap-2 rounded-none bg-stone-50 p-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         m.mutate();
@@ -389,7 +389,7 @@ export function StaffPayments() {
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
       {q.data?.length === 0 && <EmptyState title="No hay pagos en esta categoría" />}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {q.data?.map((p) => (
           <div key={p.id} className="card p-4">
             <div className="flex items-center justify-between">
@@ -461,7 +461,7 @@ export function StaffPickups() {
       {q.isLoading && <Spinner />}
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
       {q.data && (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {days.map((d) => {
             const list = q.data.filter((o) => o.pickupDate === d);
             return (
@@ -509,7 +509,7 @@ export function StaffChat() {
   return (
     <div>
       <PageHeader title={user?.role === 'ADMIN' ? 'Conversaciones (supervisión)' : 'Atención al cliente'} />
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
         <div className={`card overflow-hidden ${id ? 'hidden lg:block' : ''}`}>
           <div className="border-b border-stone-200 p-3">
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Estado">

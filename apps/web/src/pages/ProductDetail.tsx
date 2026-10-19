@@ -37,7 +37,7 @@ export function ProductDetailPage() {
       <Link to="/catalogo" className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
         <ChevronLeft className="h-4 w-4" aria-hidden /> Volver al catálogo
       </Link>
-      <div className="mt-8 grid gap-14 lg:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-14 lg:grid-cols-2">
         <div>
           <div className="bg-stone-100 p-8 sm:p-14">
             {img ? <img src={img.url} alt={img.alt} className="aspect-square w-full object-cover shadow-gallery" /> : <ProductImage product={p} className="aspect-square w-full" />}
