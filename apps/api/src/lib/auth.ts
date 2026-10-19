@@ -13,7 +13,7 @@ export const CSRF_HEADER = 'x-csrf-token';
 export interface AuthContext {
   sessionId: string;
   userId: string;
-  email: string;
+  email: string | null;
   role: Role;
   customerId: string | null;
   sellerId: string | null;
@@ -47,14 +47,16 @@ export async function loadAuthFromToken(token: string | undefined): Promise<Auth
     customerId: user.customer?.id ?? null,
     sellerId: user.seller?.id ?? null,
     sellerActive: user.seller?.active ?? false,
-    fullName: user.customer?.fullName ?? user.seller?.fullName ?? user.email,
+    fullName: user.customer?.fullName ?? user.seller?.fullName ?? user.email ?? 'Cliente',
     permissions: permissionsFor(user.role, user.seller),
   };
 }
 
-export async function createSession(reply: FastifyReply, request: FastifyRequest, userId: string) {
+/** Clientes sin contraseña: la sesión del dispositivo es su identificación, por eso dura más. */
+export async function createSession(reply: FastifyReply, request: FastifyRequest, userId: string, opts: { passwordless?: boolean } = {}) {
   const token = randomToken();
-  const expiresAt = new Date(Date.now() + config.SESSION_TTL_HOURS * 3600_000);
+  const ttlHours = opts.passwordless ? config.CUSTOMER_SESSION_TTL_DAYS * 24 : config.SESSION_TTL_HOURS;
+  const expiresAt = new Date(Date.now() + ttlHours * 3600_000);
   await prisma.session.create({
     data: {
       tokenHash: sha256(token),

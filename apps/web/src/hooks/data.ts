@@ -46,3 +46,12 @@ export function useCartMutations() {
     }),
   };
 }
+
+export function useCustomerProfile(enabled: boolean) {
+  return useQuery({
+    queryKey: ['customer-profile'],
+    queryFn: () => api<import('../lib/types').CustomerProfile>('/api/customers/me'),
+    enabled,
+    staleTime: 60_000,
+  });
+}

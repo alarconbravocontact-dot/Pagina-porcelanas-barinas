@@ -1,3 +1,4 @@
+import type { TokenPurpose } from '@prisma/client';
 import { prisma } from '../db';
 import { randomToken, sha256, hashPassword } from '../lib/crypto';
 import { AppError, notFound } from '../lib/errors';
@@ -41,5 +42,27 @@ export async function consumeActivationToken(token: string, password: string) {
     await tx.user.update({ where: { id: row.userId }, data: { passwordHash } });
     await tx.session.deleteMany({ where: { userId: row.userId } });
   });
+  return row.user;
+}
+
+const ACCESS_HOURS = 24;
+
+/** Enlace de acceso de un solo uso para que un cliente abra su perfil en otro dispositivo. */
+export async function createAccessToken(userId: string, createdById: string) {
+  const token = randomToken(32);
+  await prisma.$transaction([
+    prisma.userToken.updateMany({ where: { userId, purpose: 'ACCESS', usedAt: null }, data: { usedAt: new Date() } }),
+    prisma.userToken.create({ data: { userId, purpose: 'ACCESS' as TokenPurpose, tokenHash: sha256(token), expiresAt: new Date(Date.now() + ACCESS_HOURS * 3_600_000), createdById } }),
+  ]);
+  return { token, path: `/acceso?token=${token}`, expiresInHours: ACCESS_HOURS };
+}
+
+export async function consumeAccessToken(token: string) {
+  const row = await prisma.userToken.findUnique({ where: { tokenHash: sha256(token) }, include: { user: true } });
+  if (!row || row.purpose !== 'ACCESS' || row.usedAt || row.expiresAt < new Date() || !row.user.active) {
+    throw new AppError(400, 'INVALID_TOKEN', 'El enlace de acceso no es válido o ya venció. Pide uno nuevo a tu vendedor.');
+  }
+  const used = await prisma.userToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: new Date() } });
+  if (used.count === 0) throw new AppError(400, 'INVALID_TOKEN', 'El enlace ya fue utilizado');
   return row.user;
 }

@@ -53,12 +53,12 @@ export const ORDER_STATUS = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUS)[number];
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: 'Pendiente de pago',
-  CONFIRMED: 'Confirmada',
-  READY_FOR_PICKUP: 'Lista para retiro',
-  DELIVERED: 'Entregada',
-  CANCELLED: 'Cancelada',
-  EXPIRED: 'Vencida',
+  PENDING_PAYMENT: 'Orden registrada',
+  CONFIRMED: 'Pedido en preparación',
+  READY_FOR_PICKUP: 'Listo para retirar',
+  DELIVERED: 'Entregado',
+  CANCELLED: 'Cancelado',
+  EXPIRED: 'Vencido',
 };
 
 export const ORDER_PAYMENT_STATUS = ['UNPAID', 'PARTIAL', 'PAID'] as const;
@@ -179,12 +179,13 @@ export const priceListForCurrency = (currency: Currency): PriceList => (currency
 export const currencyForPriceList = (list: PriceList): Currency => (list === 'BCV' ? 'VES' : 'USD');
 
 /** Estado de revisión visible para el comprador (distinto del método de pago elegido). */
-export const PAYMENT_REVIEW_STATES = ['AWAITING_PAYMENT', 'PROOF_RECEIVED', 'APPROVED', 'PARTIALLY_APPROVED', 'REJECTED'] as const;
+export const PAYMENT_REVIEW_STATES = ['AWAITING_PAYMENT', 'PROOF_RECEIVED', 'IN_REVIEW', 'APPROVED', 'PARTIALLY_APPROVED', 'REJECTED'] as const;
 export type PaymentReviewState = (typeof PAYMENT_REVIEW_STATES)[number];
 export const PAYMENT_REVIEW_STATE_LABELS: Record<PaymentReviewState, string> = {
   AWAITING_PAYMENT: 'Pago pendiente',
-  PROOF_RECEIVED: 'Comprobante recibido · en revisión',
-  APPROVED: 'Pago aprobado',
-  PARTIALLY_APPROVED: 'Pago parcial aprobado',
+  PROOF_RECEIVED: 'Comprobante recibido',
+  IN_REVIEW: 'Pago en revisión',
+  APPROVED: 'Pago confirmado',
+  PARTIALLY_APPROVED: 'Pago parcial confirmado',
   REJECTED: 'Pago rechazado',
 };

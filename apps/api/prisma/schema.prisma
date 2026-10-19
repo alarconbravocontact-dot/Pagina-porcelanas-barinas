@@ -58,6 +58,8 @@ enum PriceList {
 enum TokenPurpose {
   ACTIVATION
   PASSWORD_RESET
+  /// Acceso de un cliente desde otro dispositivo, enviado por el vendedor o la administración.
+  ACCESS
 }
 
 enum QuantityMode {
@@ -147,7 +149,8 @@ enum OrderNoteKind {
 
 model User {
   id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique
+  /// Opcional: los clientes pueden comprar sin correo (identificados por sesión segura).
+  email        String?   @unique
   passwordHash String
   role         Role      @default(CUSTOMER)
   active       Boolean   @default(true)
@@ -207,13 +210,19 @@ model UserToken {
 }
 
 model CustomerProfile {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @unique @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName  String
-  phone     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @unique @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  /// Teléfono normalizado en formato internacional (+58...).
+  phone      String
+  city       String   @default("")
+  /// Zona o dirección de referencia.
+  addressRef String   @default("")
+  /// Cédula normalizada (V-12345678). Única: un perfil por persona. Dato protegido.
+  documentId String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   orders        Order[]
   conversations Conversation[]
@@ -500,6 +509,10 @@ model Order {
   cancelReason      String?
   contactName       String
   contactPhone      String
+  /// Copia de los datos del cliente al crear la orden (protegidos por control de acceso).
+  contactCity       String             @default("")
+  contactAddressRef String             @default("")
+  contactDocumentId String             @default("")
   customerNotes     String?
   /// Condiciones comerciales vigentes al confirmar (copia histórica).
   termsSnapshot     Json
@@ -577,32 +590,35 @@ model BlockedPickupDate {
 }
 
 model Payment {
-  id             String        @id @default(uuid()) @db.Uuid
-  orderId        String        @db.Uuid
-  order          Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  methodId       String        @db.Uuid
-  method         PaymentMethod @relation(fields: [methodId], references: [id], onDelete: Restrict)
-  currency       Currency
-  amountCents    Int
+  id                String        @id @default(uuid()) @db.Uuid
+  orderId           String        @db.Uuid
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  methodId          String        @db.Uuid
+  method            PaymentMethod @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  currency          Currency
+  amountCents       Int
   /// Equivalente en USD acreditable, calculado con la tasa de la operación.
-  creditUsdCents Int
-  rateValue      Decimal       @db.Decimal(20, 8)
-  reference      String
+  creditUsdCents    Int
+  rateValue         Decimal       @db.Decimal(20, 8)
+  reference         String
   /// Referencia normalizada (mayúsculas, sin espacios) para detectar duplicados.
-  referenceKey   String
-  paidAt         DateTime      @db.Date
-  payerName      String?
-  notes          String?
-  status         PaymentStatus @default(PENDING)
-  submittedById  String        @db.Uuid
-  submittedBy    User          @relation("PaymentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
-  reviewedById   String?       @db.Uuid
-  reviewedBy     User?         @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  reviewedAt     DateTime?
-  reviewNotes    String?
-  idempotencyKey String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  referenceKey      String
+  paidAt            DateTime      @db.Date
+  payerName         String?
+  notes             String?
+  status            PaymentStatus @default(PENDING)
+  submittedById     String        @db.Uuid
+  submittedBy       User          @relation("PaymentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedById      String?       @db.Uuid
+  reviewedBy        User?         @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  /// Inicio de la revisión manual (estado "pago en revisión").
+  reviewStartedAt   DateTime?
+  reviewStartedById String?       @db.Uuid
+  reviewNotes       String?
+  idempotencyKey    String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   proofs PaymentProof[]
 

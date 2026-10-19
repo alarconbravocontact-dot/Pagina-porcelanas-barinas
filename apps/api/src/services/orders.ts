@@ -18,6 +18,8 @@ import { computeQuote, createQuote, quoteMatches, type StoredQuoteLine } from '.
 import { getCurrentRate } from './rates';
 import { getSettings } from './settings';
 import { isMethodConfigured, publicMethod } from './paymentMethods';
+import { isProfileComplete } from './customers';
+import { maskDocumentId } from '@porcelanas/shared';
 
 export const ACTIVE_STATUSES: OrderStatus[] = ['PENDING_PAYMENT', 'CONFIRMED', 'READY_FOR_PICKUP'];
 
@@ -46,7 +48,9 @@ export type OrderFull = Prisma.OrderGetPayload<{ include: typeof orderInclude }>
 /** Estado de revisión para el comprador: método elegido ≠ pago recibido ≠ pago aprobado. */
 export function paymentReviewState(o: Pick<OrderFull, 'paymentStatus' | 'payments'>) {
   if (o.paymentStatus === 'PAID') return 'APPROVED' as const;
-  if (o.payments.some((p) => p.status === 'PENDING')) return 'PROOF_RECEIVED' as const;
+  const pending = o.payments.filter((p) => p.status === 'PENDING');
+  if (pending.some((p) => p.reviewStartedAt)) return 'IN_REVIEW' as const;
+  if (pending.length > 0) return 'PROOF_RECEIVED' as const;
   if (o.paymentStatus === 'PARTIAL') return 'PARTIALLY_APPROVED' as const;
   if (o.payments.length > 0 && o.payments[0]!.status === 'REJECTED') return 'REJECTED' as const;
   return 'AWAITING_PAYMENT' as const;
@@ -80,6 +84,10 @@ export function serializeOrder(o: OrderFull, viewer: 'customer' | 'staff') {
     cancelReason: o.cancelReason,
     contactName: o.contactName,
     contactPhone: o.contactPhone,
+    contactCity: o.contactCity,
+    contactAddressRef: o.contactAddressRef,
+    // La cédula nunca viaja completa en el detalle; el personal autorizado la consulta aparte (auditado).
+    contactDocumentMasked: maskDocumentId(o.contactDocumentId),
     customerNotes: o.customerNotes,
     createdAt: o.createdAt,
     terms: o.termsSnapshot,
@@ -134,6 +142,7 @@ export function serializeOrder(o: OrderFull, viewer: 'customer' | 'staff') {
       status: p.status,
       reviewedAt: p.reviewedAt,
       reviewNotes: p.reviewNotes,
+      reviewStartedAt: p.reviewStartedAt,
       reviewedBy: viewer === 'staff' ? (p.reviewedBy?.email ?? null) : undefined,
       createdAt: p.createdAt,
       proofs: p.proofs,
@@ -145,11 +154,11 @@ export function serializeOrder(o: OrderFull, viewer: 'customer' | 'staff') {
       toStatus: e.toStatus,
       message: e.message,
       createdAt: e.createdAt,
-      actor: viewer === 'staff' ? (e.actor?.email ?? 'sistema') : e.actor ? (e.actor.role === 'CUSTOMER' ? 'Usted' : 'Equipo de la tienda') : 'Sistema',
+      actor: viewer === 'staff' ? (e.actor ? (e.actor.email ?? 'cliente') : 'sistema') : e.actor ? (e.actor.role === 'CUSTOMER' ? 'Usted' : 'Equipo de la tienda') : 'Sistema',
     })),
     notes:
       viewer === 'staff'
-        ? o.notes.map((n) => ({ id: n.id, kind: n.kind, body: n.body, author: n.author.email, createdAt: n.createdAt }))
+        ? o.notes.map((n) => ({ id: n.id, kind: n.kind, body: n.body, author: n.author.email ?? 'cliente', createdAt: n.createdAt }))
         : undefined,
   };
 }
@@ -175,6 +184,12 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
     where: { customerId_idempotencyKey: { customerId: auth.customerId, idempotencyKey } },
   });
   if (existing) return { order: existing, replayed: true };
+
+  // Los cuatro datos del cliente provienen de su perfil guardado (no del navegador).
+  const profile = await prisma.customerProfile.findUniqueOrThrow({ where: { id: auth.customerId } });
+  if (!isProfileComplete(profile)) {
+    throw new AppError(422, 'PROFILE_INCOMPLETE', 'Complete sus datos (nombre, ubicación, teléfono y cédula) antes de generar la orden.');
+  }
 
   // Vendedor obligatorio y activo.
   const seller = await prisma.seller.findUnique({ where: { id: input.sellerId }, include: { user: true } });
@@ -272,8 +287,11 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
             totalAreaUnits: current.totalAreaUnits,
             pickupDate: toDbDate(input.pickupDate),
             expiresAt: holdUntil,
-            contactName: input.fullName,
-            contactPhone: input.phone,
+            contactName: profile.fullName,
+            contactPhone: profile.phone,
+            contactCity: profile.city,
+            contactAddressRef: profile.addressRef,
+            contactDocumentId: profile.documentId!,
             customerNotes: input.customerNotes || null,
             termsSnapshot: termsSnapshot as Prisma.InputJsonValue,
             idempotencyKey,
@@ -310,16 +328,15 @@ export async function createOrder(auth: AuthContext & { customerId: string }, in
           });
         }
         await reserveCapacity(tx, input.pickupDate, settings.pickup.capacityPerDay);
-        await logEvent(tx, created.id, 'CREATED', `Operación creada (${input.type === 'PICKUP' ? 'compra con retiro' : 'prepago'})`, auth.userId, null, 'PENDING_PAYMENT');
-        await tx.customerProfile.update({ where: { id: auth.customerId }, data: { fullName: input.fullName, phone: input.phone } });
+        await logEvent(tx, created.id, 'CREATED', `Orden de compra registrada (${input.type === 'PICKUP' ? 'compra con retiro' : 'prepago'}) · pago pendiente`, auth.userId, null, 'PENDING_PAYMENT');
         await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
         const sellerUser = seller.userId;
         await notify(
           [sellerUser],
           {
             type: 'ORDER_CREATED',
-            title: `Nueva operación ${created.code}`,
-            body: `${input.fullName} lo seleccionó como vendedor. Retiro: ${input.pickupDate}.`,
+            title: `Nueva orden ${created.code}`,
+            body: `${profile.fullName} (${profile.city}) lo seleccionó como vendedor. Método: ${method.name}. Retiro: ${input.pickupDate}.`,
             link: `/vendedor/operaciones/${created.id}`,
           },
           tx,

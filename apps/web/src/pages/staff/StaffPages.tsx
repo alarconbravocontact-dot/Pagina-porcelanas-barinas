@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { addDays, localDateString, ORDER_STATUS, usdCentsToVesCents, type OrderStatus } from '@porcelanas/shared';
+import { addDays, localDateString, ORDER_STATUS, toWhatsappNumber, usdCentsToVesCents, type OrderStatus, type PaymentReviewState } from '@porcelanas/shared';
+import { WhatsAppButton } from '../../components/WhatsAppButton';
 import { api, ApiError, errorMessage, newIdempotencyKey, toQuery } from '../../lib/api';
 import type { Conversation, Order, OrderPayment } from '../../lib/types';
 import { formatDateTime, formatShortDate, formatUSD, formatVES, ORDER_STATUS_LABELS, ORDER_TYPE_LABELS } from '../../lib/format';
 import { useSession } from '../../hooks/session';
 import { usePaymentMethods, useSettings } from '../../hooks/data';
 import { Alert, EmptyState, ErrorState, Field, PageHeader, Pagination, Spinner } from '../../components/ui';
-import { OrderPaymentBadge, OrderStatusBadge, PaymentStatusBadge } from '../../components/StatusBadges';
+import { OrderStatusBadge, PaymentReviewBadge, PaymentStatusBadge } from '../../components/StatusBadges';
+import { OrderProgress } from '../../components/OrderConfirmation';
 import { OrderAmounts, OrderHeader, OrderItemsTable, OrderTimeline, PaymentsList, PickupInfo } from '../../components/OrderParts';
 import { ChatThread, ConversationList } from '../../components/ChatThread';
 import { NotFoundPage } from '../NotFound';
@@ -28,9 +30,14 @@ interface StaffOrderRow {
   pickupDate: string;
   contactName: string;
   contactPhone: string;
+  contactCity: string;
+  contactAddressRef: string;
   createdAt: string;
   seller: { id: string; displayName: string };
+  preferredMethod: { name: string } | null;
+  items: { sku: string; productName: string; boxes: number; areaUnits: number }[];
   pendingPayments: number;
+  paymentReviewState: PaymentReviewState;
 }
 
 export function StaffOrders() {
@@ -69,8 +76,9 @@ export function StaffOrders() {
           <table className="table-base">
             <thead>
               <tr>
-                <th>Operación</th>
+                <th>Orden</th>
                 <th>Cliente</th>
+                <th>Productos</th>
                 <th>Retiro</th>
                 <th>Estado</th>
                 <th className="text-right">Total</th>
@@ -89,14 +97,28 @@ export function StaffOrders() {
                   </td>
                   <td>
                     {o.contactName}
-                    <p className="text-xs text-ink-muted">{o.contactPhone}</p>
+                    <p className="text-xs text-ink-muted">
+                      <a href={`tel:${o.contactPhone}`} className="hover:underline">
+                        {o.contactPhone}
+                      </a>
+                    </p>
+                    <p className="text-xs text-ink-muted">
+                      {o.contactCity} · {o.contactAddressRef}
+                    </p>
+                  </td>
+                  <td className="text-xs">
+                    {o.items.map((i) => (
+                      <p key={i.sku}>
+                        {i.boxes} cj · {i.productName}
+                      </p>
+                    ))}
                   </td>
                   <td className="whitespace-nowrap">{formatShortDate(o.pickupDate)}</td>
                   <td>
                     <div className="flex flex-col items-start gap-1">
                       <OrderStatusBadge status={o.status} />
-                      <OrderPaymentBadge status={o.paymentStatus} />
-                      {o.pendingPayments > 0 && <span className="text-xs font-medium text-amber-800">{o.pendingPayments} pago(s) por verificar</span>}
+                      <PaymentReviewBadge state={o.paymentReviewState} />
+                      <span className="text-[11px] text-ink-muted">{o.preferredMethod?.name ?? '—'}</span>
                     </div>
                   </td>
                   <td className="whitespace-nowrap text-right">{formatUSD(o.totalCents)}</td>
@@ -160,6 +182,9 @@ export function StaffOrderDetail() {
           )}
         </div>
       </div>
+      <div className="mt-5">
+        <OrderProgress order={o} />
+      </div>
       {action.isError && <Alert kind="error" className="mt-3">{errorMessage(action.error)}</Alert>}
       {active && (
         <input className="input mt-3 max-w-lg" placeholder="Observación para el cambio de estado (opcional / motivo de cancelación)" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Observación" />
@@ -218,6 +243,14 @@ export function StaffOrderDetail() {
                 {o.contactPhone}
               </a>
             </p>
+            <p className="mt-1 text-ink-soft">
+              {o.contactCity} · {o.contactAddressRef}
+            </p>
+            <CustomerDocument orderId={o.id} masked={o.contactDocumentMasked} />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <WhatsAppButton variant="link" number={toWhatsappNumber(o.contactPhone)} label="WhatsApp al cliente" message={`Hola, ${o.contactName.split(' ')[0]}. Te escribo por tu orden ${o.code}.`} />
+            </div>
+            <AccessLink orderId={o.id} phone={o.contactPhone} name={o.contactName} code={o.code} />
             {o.customerNotes && <p className="mt-2 rounded-none bg-stone-50 p-2 text-xs">“{o.customerNotes}”</p>}
             <p className="mt-3 text-xs uppercase tracking-wide text-ink-muted">Vendedor</p>
             <p>{o.seller.displayName}</p>
@@ -247,12 +280,20 @@ export function StaffOrderDetail() {
 function ReviewControls({ payment, onDone }: { payment: OrderPayment; onDone: () => void }) {
   const [notes, setNotes] = useState('');
   const m = useMutation({ mutationFn: (decision: 'APPROVE' | 'REJECT') => api(`/api/staff/payments/${payment.id}/review`, { body: { decision, notes: notes || undefined } }), onSuccess: onDone });
+  const start = useMutation({ mutationFn: () => api(`/api/staff/payments/${payment.id}/start-review`, { method: 'POST', body: {} }), onSuccess: onDone });
   return (
     <div className="mt-2 rounded-none border border-amber-200 bg-amber-50 p-3">
       {payment.proofs[0] && (
         <a href={`/api/proofs/${payment.proofs[0].id}`} target="_blank" rel="noopener noreferrer">
           <img src={`/api/proofs/${payment.proofs[0].id}`} alt="Comprobante de pago" className="mb-2 max-h-56 rounded-none border border-stone-200 bg-white object-contain" />
         </a>
+      )}
+      {payment.reviewStartedAt ? (
+        <p className="mb-2 text-xs text-ink-muted">En revisión desde {formatDateTime(payment.reviewStartedAt)}</p>
+      ) : (
+        <button type="button" className="btn-outline btn-sm mb-2" onClick={() => start.mutate()} disabled={start.isPending}>
+          Iniciar revisión
+        </button>
       )}
       <input className="input" placeholder="Observaciones (obligatorio para rechazar)" value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Observaciones de revisión" />
       <div className="mt-2 flex gap-2">
@@ -505,6 +546,45 @@ export function StaffChat() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** La cédula se muestra enmascarada; la consulta completa es explícita y queda auditada. */
+function CustomerDocument({ orderId, masked }: { orderId: string; masked: string }) {
+  const m = useMutation({ mutationFn: () => api<{ documentId: string }>(`/api/staff/orders/${orderId}/customer-document`, { method: 'POST', body: {} }) });
+  return (
+    <p className="mt-1 text-ink-soft">
+      Cédula: {m.data?.documentId ?? masked}{' '}
+      {!m.data && (
+        <button type="button" className="text-xs underline" onClick={() => m.mutate()} disabled={m.isPending}>
+          ver completa
+        </button>
+      )}
+      {m.isError && <span className="text-xs text-red-700"> {errorMessage(m.error)}</span>}
+    </p>
+  );
+}
+
+/** Enlace de acceso de un solo uso para que el cliente abra su perfil en otro dispositivo. */
+function AccessLink({ orderId, phone, name, code }: { orderId: string; phone: string; name: string; code: string }) {
+  const m = useMutation({ mutationFn: () => api<{ path: string; expiresInHours: number }>(`/api/staff/orders/${orderId}/access-link`, { method: 'POST', body: {} }) });
+  const url = m.data ? `${window.location.origin}${m.data.path}` : null;
+  return (
+    <div className="mt-3 border-t border-stone-100 pt-3">
+      {!url ? (
+        <button type="button" className="btn-ghost btn-sm" onClick={() => m.mutate()} disabled={m.isPending}>
+          Enviar enlace de acceso al cliente
+        </button>
+      ) : (
+        <div className="space-y-2 text-xs">
+          <p>
+            Enlace de un solo uso (válido {m.data!.expiresInHours} h): <code className="break-all bg-stone-100 px-1">{url}</code>
+          </p>
+          <WhatsAppButton variant="link" number={toWhatsappNumber(phone)} label="Enviar por WhatsApp" message={`Hola, ${name.split(' ')[0]}. Este es tu enlace para ver tu orden ${code} desde otro dispositivo: ${url}`} />
+        </div>
+      )}
+      {m.isError && <p className="text-xs text-red-700">{errorMessage(m.error)}</p>}
     </div>
   );
 }

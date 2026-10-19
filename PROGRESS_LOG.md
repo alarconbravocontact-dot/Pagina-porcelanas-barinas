@@ -55,3 +55,17 @@
 - Existencias de cada producto; verificación de caja de las 5 piezas en borrador; SKU definitivos si se desea.
 - Activación de la cuenta de Juan (contraseña elegida por él).
 - Dirección, horario y políticas de la sede; tasa BCV del día.
+
+## 2026-10-19 — Registro del cliente, orden de compra y confirmación de retiro
+- **Compra sin cuenta con 4 datos** (nombre, ubicación = ciudad + zona, teléfono, cédula): formulario breve en el checkout, validado con el mismo esquema en navegador y servidor. Crea un cliente sin correo ni contraseña y abre una sesión segura en el dispositivo (180 días); los datos se reutilizan y pueden corregirse antes de confirmar.
+- **Seguridad**: cédula única (sin perfiles duplicados) y nunca usada para iniciar sesión; si la cédula ya existe desde otra sesión se rechaza sin revelar el perfil. Acceso desde otro dispositivo por enlace de un solo uso enviado por el vendedor, o con correo y contraseña opcionales. Cédula enmascarada en todas las vistas; consulta completa explícita y auditada solo para administrador y vendedor asignado.
+- **Orden**: toma los datos del perfil (no del navegador) y guarda una copia; incluye número único, productos y códigos, cantidades, cajas, m², precios unitarios, total USD, tasa, Bs, método, vendedor, comprobantes, fecha y estados. Idempotencia contra dobles clics.
+- **Flujo posterior**: paso de comprobante (o “pagaré después”) y luego el cartel “¡Tu orden de compra ha sido registrada!” con el texto solicitado, número de orden, datos de Juan Alarcon, botón “Contactar a mi vendedor por WhatsApp” (wa.me/584125552594 con el número de orden real) y “Ver mi orden de compra”. Aclara que la orden no implica pago aprobado ni pedido listo, y muestra la fecha de retiro.
+- **Estados diferenciados**: Orden registrada · Pago pendiente · Comprobante recibido · Pago en revisión (nuevo, `Payment.reviewStartedAt`) · Pago confirmado · Pedido en preparación · Listo para retirar · Entregado · Cancelado. Barra de progreso en el detalle del cliente y del vendedor.
+- **Panel del vendedor**: lista con número de orden, cliente, teléfono, ubicación, productos y cajas, método y estado del comprobante; detalle con historial, cédula enmascarada, enlace de acceso para el cliente, WhatsApp al cliente y botón “Iniciar revisión”.
+- **Bug corregido** (detectado por E2E): el formulario de datos quedaba anidado dentro del formulario del checkout (HTML inválido) y su envío se perdía.
+- Pruebas: shared 17/17, API 72/72 (9 nuevas en `test/customer-order.test.ts`), web 10/10 (4 nuevas: formulario y cartel/WhatsApp), E2E 15/15 (flujo completo: 4 datos → Juan → Zelle → orden → comprobante → cartel → revisión → panel de Juan).
+
+### Pendiente
+- Datos de recepción de los métodos de pago, existencias, activación de la cuenta de Juan, tasa BCV y datos de la sede (sin cambios respecto al bloque anterior).
+- Cifrado en reposo de la cédula (hoy protegida por control de acceso, enmascarado y auditoría): requiere definir y custodiar una clave de cifrado.

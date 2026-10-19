@@ -6,8 +6,10 @@ import { prisma } from '../db';
 import { audit } from '../lib/audit';
 import { requirePermission, requireRole } from '../lib/auth';
 import { parse } from '../lib/errors';
-import { addOrderNote, getOrderFull, serializeOrder, staffAction, staffScope } from '../services/orders';
-import { listPaymentsForReview, reviewPayment, submitPayment } from '../services/payments';
+import { addOrderNote, getOrderFull, paymentReviewState, serializeOrder, staffAction, staffScope } from '../services/orders';
+import { listPaymentsForReview, reviewPayment, startReview, submitPayment } from '../services/payments';
+import { createAccessToken } from '../services/tokens';
+import { notFound } from '../lib/errors';
 import { toDbDate } from '../services/pickup';
 
 const listQuery = z.object({
@@ -59,9 +61,14 @@ export async function staffRoutes(app: FastifyInstance) {
           pickupDate: true,
           contactName: true,
           contactPhone: true,
+          contactCity: true,
+          contactAddressRef: true,
           createdAt: true,
           expiresAt: true,
           seller: { select: { id: true, displayName: true } },
+          preferredMethod: { select: { name: true } },
+          items: { select: { sku: true, productName: true, boxes: true, areaUnits: true } },
+          payments: { select: { status: true, reviewStartedAt: true }, orderBy: { createdAt: 'desc' } },
           _count: { select: { payments: { where: { status: 'PENDING' } } } },
         },
       }),
@@ -70,7 +77,12 @@ export async function staffRoutes(app: FastifyInstance) {
       total,
       page: q.page,
       pageSize: q.pageSize,
-      items: rows.map((r) => ({ ...r, pickupDate: r.pickupDate.toISOString().slice(0, 10), pendingPayments: r._count.payments })),
+      items: rows.map(({ payments, ...r }) => ({
+        ...r,
+        pickupDate: r.pickupDate.toISOString().slice(0, 10),
+        pendingPayments: r._count.payments,
+        paymentReviewState: paymentReviewState({ paymentStatus: r.paymentStatus, payments } as never),
+      })),
     };
   });
 
@@ -118,6 +130,31 @@ export async function staffRoutes(app: FastifyInstance) {
     const input = parse(paymentReviewSchema, req.body);
     const p = await reviewPayment(auth, req.params.id, input.decision, input.notes);
     return { id: p.id, status: p.status };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/staff/payments/:id/start-review', async (req) => {
+    const auth = requirePermission(req, 'payments:review');
+    const p = await startReview(auth, req.params.id);
+    return { id: p.id, status: p.status, reviewStartedAt: p.reviewStartedAt };
+  });
+
+  /** Consulta puntual de la cédula completa: solo administrador o vendedor asignado; queda auditada. */
+  app.post<{ Params: { id: string } }>('/api/staff/orders/:id/customer-document', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req) => {
+    const auth = requireRole(req, 'ADMIN', 'SELLER');
+    const order = await prisma.order.findFirst({ where: { id: req.params.id, ...staffScope(auth) }, select: { id: true, contactDocumentId: true } });
+    if (!order) throw notFound('Operación no encontrada');
+    await audit(req, 'customer.document_view', 'Order', order.id);
+    return { documentId: order.contactDocumentId };
+  });
+
+  /** Enlace de acceso de un solo uso para que el cliente abra su perfil en otro dispositivo. */
+  app.post<{ Params: { id: string } }>('/api/staff/orders/:id/access-link', async (req) => {
+    const auth = requireRole(req, 'ADMIN', 'SELLER');
+    const order = await prisma.order.findFirst({ where: { id: req.params.id, ...staffScope(auth) }, include: { customer: true } });
+    if (!order) throw notFound('Operación no encontrada');
+    const r = await createAccessToken(order.customer.userId, auth.userId);
+    await audit(req, 'customer.access_link', 'Order', order.id);
+    return { path: r.path, expiresInHours: r.expiresInHours, phone: order.contactPhone };
   });
 
   app.get('/api/staff/pickups', async (req) => {

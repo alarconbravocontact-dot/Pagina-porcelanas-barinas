@@ -20,8 +20,11 @@ describe('Bloques D/F — operación de vendedores y administradores', () => {
     const list = (await seller.get('/api/staff/orders')).json();
     expect(list.items.map((i: { code: string }) => i.code)).toEqual([o.code]);
     const detail = (await seller.get(`/api/staff/orders/${o.id}`)).json();
-    expect(detail.customer.fullName).toBe('Cliente Prueba');
-    expect(detail.customer.phone).toBe('+58 412 1234567');
+    expect(detail.customer.fullName).toBe('Cliente cliente@test.local');
+    expect(detail.contactPhone).toBe('+584120000000');
+    expect(detail.contactCity).toBe('Barinas');
+    expect(detail.contactDocumentMasked).toMatch(/^V-\*{4}\d{4}$/);
+    expect(JSON.stringify(detail)).not.toMatch(/V-1000\d{4}/);
     await createUser('SELLER', 'v2@test.local');
     const other = await login(s.app, 'v2@test.local');
     expect((await other.get('/api/staff/orders')).json().items).toHaveLength(0);

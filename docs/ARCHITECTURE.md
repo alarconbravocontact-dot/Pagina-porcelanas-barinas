@@ -39,6 +39,14 @@ Un único proceso Node sirve la API (`/api`), los archivos públicos (`/media`),
 - **Guía de uso**: `Product.slipRating` (R11, R10, moderado, medio‑bajo, resbaladizo) y `usageGuide` (salas, cocina, piso de baño, ducha, exterior, paredes = recomendado / precaución / no recomendado). Filtros `?use=ducha` y `?slip=R10`.
 - **Importación idempotente** (`src/seed/business.ts`): crea por SKU solo lo que falta; no toca existencias ni productos editados; sin `--demo` desactiva los datos de demostración.
 
+## Cliente, orden de compra y confirmación de retiro
+- **Registro rápido**: `PUT /api/customers/profile` valida los 4 datos (Zod compartido con el navegador), normaliza teléfono (`+58…`) y cédula (`V-12345678`). Sin sesión crea un `User` sin correo ni contraseña con su `CustomerProfile` y abre una sesión de `CUSTOMER_SESSION_TTL_DAYS`; con sesión actualiza el propio perfil. `CustomerProfile.documentId` es único: una cédula existente desde otra sesión responde `409 DOCUMENT_REGISTERED` sin abrir ni revelar el perfil ajeno.
+- **Sin login por cédula/teléfono**: el acceso desde otro dispositivo es por enlace de un solo uso (`UserToken` ACCESS, 24 h) generado por el vendedor asignado o el administrador (`POST /api/staff/orders/:id/access-link`), o con correo y contraseña opcionales (`POST /api/auth/credentials`).
+- **La orden toma los datos del perfil** (no del navegador) y guarda una copia: `contactName`, `contactPhone`, `contactCity`, `contactAddressRef`, `contactDocumentId`. Sin perfil completo: `422 PROFILE_INCOMPLETE`.
+- **Protección de la cédula**: las respuestas del detalle y de listas solo incluyen `contactDocumentMasked` (`V-****5678`). El valor completo se consulta con `POST /api/staff/orders/:id/customer-document` (administrador o vendedor asignado) y queda en `AuditLog` (`customer.document_view`). Las notificaciones no la incluyen. Teléfono y ubicación solo los ven el propio cliente, el vendedor asignado y el administrador.
+- **Estados separados**: estado de la orden (Orden registrada → Pedido en preparación → Listo para retirar → Entregado / Cancelado / Vencido) y estado del pago (Pago pendiente → Comprobante recibido → Pago en revisión → Pago confirmado / rechazado). “Pago en revisión” se marca con `POST /api/staff/payments/:id/start-review` (`Payment.reviewStartedAt`). Adjuntar un comprobante nunca confirma el pago.
+- **Cartel posterior**: solo se muestra en el detalle de una orden devuelta por el servidor (`/cuenta/operaciones/:code?nueva=1`), después del paso de comprobante. No es un modal bloqueante.
+
 ## Roles y permisos
 | Permiso | Admin | Vendedor | Cliente |
 |---|---|---|---|
@@ -54,9 +62,9 @@ Un único proceso Node sirve la API (`/api`), los archivos públicos (`/media`),
 
 Los roles son un enum con permisos definidos en código (`packages/shared/src/permissions.ts`) más banderas por vendedor; no se creó una tabla de permisos porque no hay requisitos de permisos dinámicos.
 
-Migraciones: `20261018210412_init` y `20261019003908_catalogo_vendedor_pagos` (precios BCV, guía de uso, contacto del vendedor, datos de recepción, lista de precios de la orden, tokens de activación). La inicial (incluye `CHECK` de existencias e importes, índice único parcial de referencias aprobadas y la restricción de dueño del carrito).
+Migraciones: `20261018210412_init`, `20261019003908_catalogo_vendedor_pagos` y `registro_cliente_orden` (correo opcional, ubicación y cédula única del cliente, copia de datos en la orden, inicio de revisión del pago, tokens de acceso) (precios BCV, guía de uso, contacto del vendedor, datos de recepción, lista de precios de la orden, tokens de activación). La inicial (incluye `CHECK` de existencias e importes, índice único parcial de referencias aprobadas y la restricción de dueño del carrito).
 
-## Endpoints (83)
+## Endpoints (90)
 | Método | Ruta |
 |---|---|
 | GET | `/api/health` |
@@ -75,6 +83,8 @@ Migraciones: `20261018210412_init` y `20261019003908_catalogo_vendedor_pagos` (p
 | POST | `/api/auth/login` |
 | POST | `/api/auth/activation/check` |
 | POST | `/api/auth/activate` |
+| POST | `/api/auth/access` |
+| POST | `/api/auth/credentials` |
 | POST | `/api/auth/logout` |
 | PATCH | `/api/auth/profile` |
 | POST | `/api/auth/password` |
@@ -83,6 +93,8 @@ Migraciones: `20261018210412_init` y `20261019003908_catalogo_vendedor_pagos` (p
 | PATCH | `/api/cart/items/:id` |
 | DELETE | `/api/cart/items/:id` |
 | DELETE | `/api/cart` |
+| GET | `/api/customers/me` |
+| PUT | `/api/customers/profile` |
 | POST | `/api/orders` |
 | GET | `/api/orders` |
 | GET | `/api/orders/:code` |
@@ -107,6 +119,9 @@ Migraciones: `20261018210412_init` y `20261019003908_catalogo_vendedor_pagos` (p
 | POST | `/api/staff/orders/:id/payments` |
 | GET | `/api/staff/payments` |
 | POST | `/api/staff/payments/:id/review` |
+| POST | `/api/staff/payments/:id/start-review` |
+| POST | `/api/staff/orders/:id/customer-document` |
+| POST | `/api/staff/orders/:id/access-link` |
 | GET | `/api/staff/pickups` |
 | GET | `/api/staff/me` |
 | GET | `/api/admin/products` |

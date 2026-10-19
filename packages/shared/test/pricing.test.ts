@@ -125,3 +125,19 @@ describe('formato de WhatsApp venezolano', () => {
     expect(formatInternationalPhone('584125552594')).toBe('+58 412-5552594');
   });
 });
+
+describe('datos del cliente', () => {
+  it('normaliza y enmascara la cédula y el teléfono', async () => {
+    const { normalizeDocumentId, maskDocumentId, normalizePhone, customerProfileSchema } = await import('../src/customer');
+    expect(normalizeDocumentId('12.345.678')).toBe('V-12345678');
+    expect(normalizeDocumentId('e-8123456')).toBe('E-8123456');
+    expect(normalizeDocumentId('J-123')).toBeNull();
+    expect(maskDocumentId('V-12345678')).toBe('V-****5678');
+    expect(normalizePhone('0412-555 2594')).toBe('+584125552594');
+    const ok = customerProfileSchema.safeParse({ fullName: 'María Pérez', city: 'Barinas', addressRef: 'Av. Principal', phone: '04125550000', documentId: 'V12345678' });
+    expect(ok.success).toBe(true);
+    const bad = customerProfileSchema.safeParse({ fullName: 'Ana', city: '', addressRef: '', phone: 'abc', documentId: '12' });
+    expect(bad.success).toBe(false);
+    expect(Object.keys(bad.error!.flatten().fieldErrors).sort()).toEqual(['addressRef', 'city', 'documentId', 'fullName', 'phone']);
+  });
+});

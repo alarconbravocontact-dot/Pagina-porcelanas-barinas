@@ -13,6 +13,7 @@ import { storage } from './lib/storage';
 import { adminRoutes } from './routes/admin';
 import { authRoutes } from './routes/auth';
 import { cartRoutes } from './routes/cart';
+import { customerRoutes } from './routes/customers';
 import { chatRoutes } from './routes/chat';
 import { orderRoutes } from './routes/orders';
 import { publicRoutes } from './routes/public';
@@ -79,6 +80,7 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
   await app.register(publicRoutes);
   await app.register(authRoutes);
   await app.register(cartRoutes);
+  await app.register(customerRoutes);
   await app.register(orderRoutes);
   await app.register(chatRoutes);
   await app.register(staffRoutes);

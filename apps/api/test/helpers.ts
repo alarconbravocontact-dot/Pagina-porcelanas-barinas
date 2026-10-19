@@ -116,13 +116,16 @@ export const JPEG_HEADER = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
 
 export const idem = () => crypto.randomUUID();
 
+let docSeq = 0;
 export async function createUser(role: 'ADMIN' | 'SELLER' | 'CUSTOMER', email: string, password = 'Password1234') {
   return prisma.user.create({
     data: {
       email,
       passwordHash: await hashPassword(password),
       role,
-      ...(role === 'CUSTOMER' ? { customer: { create: { fullName: `Cliente ${email}`, phone: '+58 412 0000000' } } } : {}),
+      ...(role === 'CUSTOMER'
+        ? { customer: { create: { fullName: `Cliente ${email}`, phone: '+584120000000', city: 'Barinas', addressRef: 'Centro', documentId: `V-${10_000_000 + ++docSeq}` } } }
+        : {}),
       ...(role === 'SELLER'
         ? { seller: { create: { fullName: `Vendedor ${email}`, displayName: `V ${email.split('@')[0]}`, phone: '+58 414 0000000' } } }
         : {}),

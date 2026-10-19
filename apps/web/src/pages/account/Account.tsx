@@ -2,20 +2,22 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Navigate, Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarClock, MessageSquare, XCircle } from 'lucide-react';
-import { passwordSchema, profileUpdateSchema } from '@porcelanas/shared';
+import { credentialsSchema, passwordSchema } from '@porcelanas/shared';
 import { api, ApiError, errorMessage } from '../../lib/api';
 import { useSession } from '../../hooks/session';
-import { useSellers, useSettings } from '../../hooks/data';
+import { useCustomerProfile, useSellers, useSettings } from '../../hooks/data';
+import { CustomerProfileForm } from '../../components/CustomerProfileForm';
 import type { Conversation, Order, PickupAvailability } from '../../lib/types';
 import { formatShortDate, formatUSD, ORDER_TYPE_LABELS } from '../../lib/format';
 import { Alert, EmptyState, ErrorState, Field, PageHeader, Spinner } from '../../components/ui';
-import { OrderPaymentBadge, OrderStatusBadge } from '../../components/StatusBadges';
+import { OrderStatusBadge, PaymentReviewBadge } from '../../components/StatusBadges';
 import { OrderAmounts, OrderHeader, OrderItemsTable, OrderTimeline, PaymentsList, PickupInfo } from '../../components/OrderParts';
 import { PaymentForm, ReplaceProofForm } from '../../components/PaymentForm';
 import { ChatThread, ConversationList } from '../../components/ChatThread';
 import { WhatsAppButton } from '../../components/WhatsAppButton';
 import { SellerContactCard } from '../../components/SellerContact';
 import { MethodInstructions } from '../Checkout';
+import { OrderProgress, OrderRegisteredBanner, visitMessage } from '../../components/OrderConfirmation';
 import { PAYMENT_REVIEW_STATE_LABELS } from '@porcelanas/shared';
 
 const RESERVATION_LABELS: Record<string, string> = {
@@ -115,7 +117,7 @@ function OrderCard({ order }: { order: Order }) {
         <p className="font-mono text-sm font-semibold">{order.code}</p>
         <div className="flex gap-1.5">
           <OrderStatusBadge status={order.status} />
-          <OrderPaymentBadge status={order.paymentStatus} />
+          <PaymentReviewBadge state={order.paymentReviewState} />
         </div>
       </div>
       <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm text-ink-muted">
@@ -154,18 +156,49 @@ export function AccountOrders() {
 export function AccountOrderDetail() {
   const { code = '' } = useParams();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [skipProof, setSkipProof] = useState(false);
   const q = useQuery({ queryKey: ['order', code], queryFn: () => api<Order>(`/api/orders/${encodeURIComponent(code)}`), retry: (n, e) => !(e instanceof ApiError && e.status === 404) && n < 2 });
   if (q.isLoading) return <Spinner />;
   if (q.error instanceof ApiError && q.error.status === 404) return <NotFoundPage />;
   if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
   const o = q.data!;
   const active = ['PENDING_PAYMENT', 'CONFIRMED', 'READY_FOR_PICKUP'].includes(o.status);
+  const isNew = !!params.get('nueva');
+  // Tras crear la orden: primero el comprobante (si el método lo requiere), luego el cartel de confirmación.
+  const needsProof = isNew && active && o.payments.length === 0 && !!o.preferredMethod?.requiresProof && !skipProof;
+  const showBanner = isNew && !needsProof;
+  const viewOrder = () => {
+    navigate(`/cuenta/operaciones/${o.code}`, { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  if (needsProof) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <p className="eyebrow">Orden {o.code} registrada · último paso</p>
+        <h1 className="mt-3 text-4xl">Adjunta tu comprobante de pago</h1>
+        <p className="mt-3 text-ink-soft">
+          Tu orden ya está guardada. Si ya pagaste por {o.preferredMethod?.name}, registra el pago y adjunta la captura para que tu vendedor lo verifique. Adjuntarla no confirma el pago
+          automáticamente.
+        </p>
+        <div className="mt-6 border border-stone-200 p-6">
+          {o.preferredMethod && <MethodInstructions method={o.preferredMethod} />}
+          <div className="mt-6">
+            <PaymentForm order={o} />
+          </div>
+        </div>
+        <button type="button" className="btn-ghost mt-4" onClick={() => setSkipProof(true)}>
+          Pagaré después · adjuntar el comprobante más tarde
+        </button>
+      </div>
+    );
+  }
   return (
     <div>
-      {params.get('nueva') && (
-        <Alert kind="success" title={`Operación ${o.code} generada`} className="mb-6">
-          Tu mercancía quedó apartada para retirar el {formatShortDate(o.pickupDate)}. Vendedor responsable: {o.seller.displayName}. Método elegido: {o.preferredMethod?.name ?? '—'} (aún sin pago registrado). Realiza el pago y adjunta el comprobante abajo para su verificación.
-        </Alert>
+      {showBanner && (
+        <div className="mb-10">
+          <OrderRegisteredBanner order={o} onViewOrder={viewOrder} />
+        </div>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -180,6 +213,15 @@ export function AccountOrderDetail() {
           <WhatsAppButton number={o.seller.whatsapp} message={orderWaMessage(o)} label="WhatsApp" />
         </div>
       </div>
+      <div className="mt-6">
+        <OrderProgress order={o} />
+      </div>
+      {active && !showBanner && (
+        <Alert kind="info" className="mt-6" title="Antes de acudir a la sede">
+          Contacta a tu vendedor {o.seller.displayName} con tu número de orden {o.code} para que esté preparado para recibirte.{' '}
+          <WhatsAppButton variant="link" number={o.seller.whatsapp} message={visitMessage(o)} label="Escribir por WhatsApp" />
+        </Alert>
+      )}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <section className="card p-5">
@@ -225,7 +267,17 @@ export function AccountOrderDetail() {
               </p>
             )}
           </section>
-          <SellerContactCard seller={o.seller} title="Vendedor responsable" message={orderWaMessage(o)} />
+          <SellerContactCard seller={o.seller} title="Vendedor responsable" message={visitMessage(o)} />
+          <section className="card p-5 text-sm">
+            <h2 className="mb-2 text-lg">Datos de la orden</h2>
+            <p>{o.contactName}</p>
+            <p className="text-ink-muted">{o.contactPhone}</p>
+            <p className="text-ink-muted">
+              {o.contactCity} · {o.contactAddressRef}
+            </p>
+            <p className="text-ink-muted">Cédula {o.contactDocumentMasked}</p>
+            <p className="mt-2 text-xs text-ink-muted">Registrada el {formatShortDate(o.createdAt.slice(0, 10))}</p>
+          </section>
           <section className="card p-5">
             <h2 className="mb-3 text-lg">Importes</h2>
             <OrderAmounts order={o} />
@@ -440,67 +492,81 @@ export function AccountChat() {
 
 export function AccountProfile() {
   const { user, refresh } = useSession();
-  const [fullName, setFullName] = useState(user?.fullName ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [fields, setFields] = useState<Record<string, string>>({});
-  const save = useMutation({ mutationFn: () => api('/api/auth/profile', { method: 'PATCH', body: { fullName, phone } }), onSuccess: () => refresh() });
+  const profile = useCustomerProfile(true);
+  const [saved, setSaved] = useState(false);
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '' });
   const [pwErr, setPwErr] = useState<string | null>(null);
   const changePw = useMutation({ mutationFn: () => api('/api/auth/password', { body: pw }), onSuccess: () => setPw({ currentPassword: '', newPassword: '' }) });
+  const [cred, setCred] = useState({ email: '', password: '' });
+  const [credErr, setCredErr] = useState<Record<string, string>>({});
+  const addCred = useMutation({ mutationFn: () => api('/api/auth/credentials', { body: cred }), onSuccess: () => refresh() });
+  if (profile.isLoading) return <Spinner />;
+  if (profile.isError) return <ErrorState error={profile.error} onRetry={() => profile.refetch()} />;
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <form
-        className="card space-y-4 p-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const r = profileUpdateSchema.safeParse({ fullName, phone });
-          if (!r.success) {
-            const f: Record<string, string> = {};
-            for (const i of r.error.issues) f[i.path.join('.')] ??= i.message;
-            return setFields(f);
-          }
-          setFields({});
-          save.mutate();
-        }}
-      >
-        <h2 className="text-lg">Datos personales</h2>
-        <Field label="Correo" htmlFor="pr-email">
-          <input id="pr-email" className="input" value={user?.email ?? ''} disabled />
-        </Field>
-        <Field label="Nombre completo" htmlFor="pr-name" error={fields.fullName}>
-          <input id="pr-name" className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        </Field>
-        <Field label="Teléfono" htmlFor="pr-phone" error={fields.phone}>
-          <input id="pr-phone" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </Field>
-        {save.isSuccess && <Alert kind="success">Datos actualizados.</Alert>}
-        {save.isError && <Alert kind="error">{errorMessage(save.error)}</Alert>}
-        <button type="submit" className="btn-primary" disabled={save.isPending}>
-          Guardar
-        </button>
-      </form>
-      <form
-        className="card space-y-4 p-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const r = passwordSchema.safeParse(pw.newPassword);
-          setPwErr(r.success ? null : r.error.issues[0]!.message);
-          if (r.success) changePw.mutate();
-        }}
-      >
-        <h2 className="text-lg">Cambiar contraseña</h2>
-        <Field label="Contraseña actual" htmlFor="pw-cur">
-          <input id="pw-cur" type="password" autoComplete="current-password" className="input" value={pw.currentPassword} onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })} />
-        </Field>
-        <Field label="Nueva contraseña" htmlFor="pw-new" error={pwErr ?? undefined}>
-          <input id="pw-new" type="password" autoComplete="new-password" className="input" value={pw.newPassword} onChange={(e) => setPw({ ...pw, newPassword: e.target.value })} />
-        </Field>
-        {changePw.isSuccess && <Alert kind="success">Contraseña actualizada. Se cerraron las demás sesiones.</Alert>}
-        {changePw.isError && <Alert kind="error">{errorMessage(changePw.error)}</Alert>}
-        <button type="submit" className="btn-primary" disabled={changePw.isPending}>
-          Actualizar contraseña
-        </button>
-      </form>
+      <section className="card p-6">
+        <h2 className="mb-1 text-2xl">Tus datos</h2>
+        <p className="mb-5 text-sm text-ink-muted">Se usan en tus órdenes de compra. Cédula registrada: {profile.data?.documentMasked || '—'}.</p>
+        {saved && <Alert kind="success" className="mb-4">Datos actualizados.</Alert>}
+        <CustomerProfileForm initial={profile.data} submitLabel="Guardar cambios" onSaved={() => setSaved(true)} />
+      </section>
+      {user?.hasCredentials ? (
+        <form
+          className="card h-fit space-y-4 p-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const r = passwordSchema.safeParse(pw.newPassword);
+            setPwErr(r.success ? null : r.error.issues[0]!.message);
+            if (r.success) changePw.mutate();
+          }}
+        >
+          <h2 className="text-2xl">Cambiar contraseña</h2>
+          <p className="text-sm text-ink-muted">Correo de acceso: {user.email}</p>
+          <Field label="Contraseña actual" htmlFor="pw-cur">
+            <input id="pw-cur" type="password" autoComplete="current-password" className="input" value={pw.currentPassword} onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })} />
+          </Field>
+          <Field label="Nueva contraseña" htmlFor="pw-new" error={pwErr ?? undefined}>
+            <input id="pw-new" type="password" autoComplete="new-password" className="input" value={pw.newPassword} onChange={(e) => setPw({ ...pw, newPassword: e.target.value })} />
+          </Field>
+          {changePw.isSuccess && <Alert kind="success">Contraseña actualizada. Se cerraron las demás sesiones.</Alert>}
+          {changePw.isError && <Alert kind="error">{errorMessage(changePw.error)}</Alert>}
+          <button type="submit" className="btn-primary" disabled={changePw.isPending}>
+            Actualizar contraseña
+          </button>
+        </form>
+      ) : (
+        <form
+          className="card h-fit space-y-4 p-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const r = credentialsSchema.safeParse(cred);
+            if (!r.success) {
+              const f: Record<string, string> = {};
+              for (const i of r.error.issues) f[i.path.join('.')] ??= i.message;
+              return setCredErr(f);
+            }
+            setCredErr({});
+            addCred.mutate();
+          }}
+        >
+          <h2 className="text-2xl">Acceso desde otros dispositivos</h2>
+          <p className="text-sm text-ink-soft">
+            Tu perfil está abierto en este dispositivo. Opcionalmente, agrega un correo y una contraseña para entrar desde cualquier otro. Si no, tu vendedor puede enviarte un enlace de
+            acceso.
+          </p>
+          <Field label="Correo (opcional)" htmlFor="cr-email" error={credErr.email}>
+            <input id="cr-email" type="email" autoComplete="email" className="input" value={cred.email} onChange={(e) => setCred({ ...cred, email: e.target.value })} />
+          </Field>
+          <Field label="Contraseña" htmlFor="cr-pw" error={credErr.password} hint="Mínimo 10 caracteres, con letras y números.">
+            <input id="cr-pw" type="password" autoComplete="new-password" className="input" value={cred.password} onChange={(e) => setCred({ ...cred, password: e.target.value })} />
+          </Field>
+          {addCred.isSuccess && <Alert kind="success">Listo: ya puedes iniciar sesión con tu correo.</Alert>}
+          {addCred.isError && <Alert kind="error">{errorMessage(addCred.error)}</Alert>}
+          <button type="submit" className="btn-outline" disabled={addCred.isPending}>
+            Guardar acceso
+          </button>
+        </form>
+      )}
     </div>
   );
 }

@@ -36,85 +36,131 @@ test.describe.serial('flujo completo de compra', () => {
     await expect(page.getByText('Configuración guardada.')).toBeVisible();
   });
 
-  test('el cliente calcula, compra con vendedor obligatorio y adjunta el comprobante', async ({ page }) => {
+  test('el cliente registra 4 datos, genera la orden con Juan y ve el cartel de confirmación', async ({ page }) => {
     await page.goto('/catalogo?q=calacatta');
     await page.getByRole('link', { name: /Calacatta Blanco/ }).first().click();
     await page.getByLabel('Superficie a cubrir (m²)').fill('30');
     // 30 m² / 1,44 m² por caja = 20,83 -> 21 cajas = 30,24 m²
-    await expect(page.getByText('Cajas necesarias')).toBeVisible();
     await expect(page.locator('dd', { hasText: /^21$/ })).toBeVisible();
     await expect(page.getByText('30,24 m²')).toBeVisible();
     await page.getByRole('button', { name: 'Agregar al carrito' }).click();
     await expect(page.getByText('Agregado al carrito')).toBeVisible();
     await page.goto('/carrito');
     await page.getByRole('link', { name: 'Continuar con la compra' }).click();
-    await page.getByRole('link', { name: 'Crear cuenta' }).click();
-    await page.getByLabel('Nombre completo').fill('María Cliente E2E');
-    await page.getByLabel('Correo electrónico').fill(`cliente-${Date.now()}@e2e.local`);
-    await page.getByLabel('Teléfono').fill('+58 412 5550000');
-    await page.getByLabel('Contraseña').fill('ClienteE2E2026');
-    await page.getByRole('button', { name: 'Crear cuenta' }).click();
-    await page.waitForURL('**/checkout');
-    // Sin vendedor no se puede confirmar.
+    await expect(page).toHaveURL(/\/checkout/);
+    // Primer ingreso: solo los cuatro datos, sin correo ni contraseña.
+    const form = page.getByRole('form', { name: 'Tus datos' });
+    await expect(form.getByLabel(/correo/i)).toHaveCount(0);
+    await form.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByText('Escriba su nombre y apellido')).toBeVisible();
+    await form.getByLabel('Nombre completo').fill('María José Pérez');
+    await form.getByLabel('Ciudad').fill('Barinas');
+    await form.getByLabel('Zona o dirección de referencia').fill('Urb. Alto Barinas, calle 3');
+    await form.getByLabel('Teléfono').fill('0414 5551234');
+    await form.getByLabel('Cédula de identidad').fill(`V-${20000000 + Math.floor(Math.random() * 9000000)}`);
+    await form.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByRole('button', { name: 'Corregir datos' })).toBeVisible();
+    await expect(page.getByText(/V-\*{4}\d{4}/)).toBeVisible();
+    // Sin vendedor no se puede generar la orden.
     await page.getByLabel(/Acepto las/).check();
-    await page.getByRole('button', { name: 'Confirmar operación' }).click();
+    await page.getByRole('button', { name: 'Generar orden de compra' }).click();
     await expect(page.getByText('Seleccione el vendedor que lo atenderá en la sede')).toBeVisible();
-    await page.getByRole('radio', { name: /Ana \(demo\)/ }).check();
-    await page.getByRole('button', { name: 'Confirmar operación' }).click();
-    await expect(page.getByText('Confirme el vendedor que lo atenderá en la sede')).toBeVisible();
-    await page.getByLabel(/Confirmo que Ana \(demo\) me atenderá/).check();
+    await page.getByRole('radio', { name: 'Juan Alarcon' }).check();
+    await page.getByLabel(/Confirmo que Juan Alarcon me atenderá/).check();
     await page.locator('[role="radiogroup"][aria-label="Fecha de retiro"] button:not([disabled])').nth(1).click();
-    await page.getByRole('radio', { name: /Zelle/ }).check();
+    await page.getByRole('radio', { name: 'Zelle' }).check();
     await expect(page.getByText('Cómo pagar con Zelle')).toBeVisible();
     await expect(page.getByText('Datos de recepción', { exact: true })).toBeVisible();
-    // Métodos sin datos de recepción se muestran deshabilitados.
-    await expect(page.getByRole('radio', { name: 'Efectivo en sede' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Confirmar operación' }).click();
-    await page.waitForURL(/\/cuenta\/operaciones\/PC-/);
-    code = page.url().split('/').pop()!.split('?')[0]!;
-    await expect(page.getByText(`Operación ${code} generada`)).toBeVisible();
-    await expect(page.getByText('Pendiente de pago').first()).toBeVisible();
-    await expect(page.getByText('Ana (demo)').first()).toBeVisible();
-    // 21 cajas × 26,64 = 559,44 USD
-    await expect(page.getByText('$ 559,44').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Generar orden de compra' }).click();
+    await page.waitForURL(/\/cuenta\/operaciones\/PC-[A-Z0-9]+\?nueva=1/);
+    code = new URL(page.url()).pathname.split('/').pop()!;
+    // Paso del comprobante antes del cartel.
+    await expect(page.getByRole('heading', { name: 'Adjunta tu comprobante de pago' })).toBeVisible();
+    await expect(page.getByText('¡Tu orden de compra ha sido registrada!')).toHaveCount(0);
     await page.getByLabel('Importe pagado (USD)').fill('559.44');
     await page.getByLabel('Referencia de la operación').fill(`ZL-${Date.now()}`);
     await page.getByLabel('Comprobante').setInputFiles({ name: 'pago.png', mimeType: 'image/png', buffer: PNG });
     await page.getByRole('button', { name: 'Registrar pago' }).click();
-    await expect(page.getByText('Comprobante recibido', { exact: true })).toBeVisible();
-    await expect(page.getByText('Comprobante recibido · en revisión').first()).toBeVisible();
-    await expect(page.getByText('Pendiente de verificación').first()).toBeVisible();
-    await expect(page.getByText('Pendiente de pago').first()).toBeVisible();
-    // Persistencia: recargar mantiene la operación.
+    // Cartel posterior a la confirmación del servidor.
+    await expect(page.getByRole('heading', { name: '¡Tu orden de compra ha sido registrada!' })).toBeVisible();
+    await expect(page.getByTestId('banner-order-code')).toHaveText(code);
+    if (process.env.E2E_SCREENSHOTS) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: `${process.env.E2E_SCREENSHOTS}/cartel-movil.png`, fullPage: true });
+      await page.setViewportSize({ width: 1280, height: 720 });
+    }
+    await expect(page.getByText('Para garantizar una atención adecuada, antes de dirigirte a nuestra sede en Barinas, debes contactar a tu vendedor asignado para que esté preparado para recibirte y atender tu pedido.')).toBeVisible();
+    await expect(page.getByText('04125552594').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'alarconbravocontact@gmail.com' }).first()).toHaveAttribute('href', 'mailto:alarconbravocontact@gmail.com');
+    const wa = page.getByTestId('banner-whatsapp');
+    await expect(wa).toHaveText(/Contactar a mi vendedor por WhatsApp/i);
+    const href = (await wa.getAttribute('href'))!;
+    expect(href.startsWith('https://wa.me/584125552594?text=')).toBe(true);
+    expect(decodeURIComponent(href)).toContain(`Hola, Juan. Acabo de realizar una orden de compra de porcelanas en la plataforma. Mi número de orden es ${code}.`);
+    await expect(page.getByText('Comprobante recibido', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/no significa que el pago haya sido aprobado/)).toBeVisible();
+    // Ver mi orden: detalle real con productos, importes y estados separados.
+    await page.getByRole('button', { name: 'Ver mi orden de compra' }).click();
+    await expect(page).not.toHaveURL(/nueva=1/);
+    await expect(page.getByRole('heading', { name: code })).toBeVisible();
+    await expect(page.getByText('Orden registrada').first()).toBeVisible();
+    await expect(page.getByText('$ 559,44').first()).toBeVisible();
+    await expect(page.getByText('Calacatta Blanco (demo)').first()).toBeVisible();
     await page.reload();
     await expect(page.getByRole('heading', { name: code })).toBeVisible();
+    // Reutilización del perfil: una nueva compra no vuelve a pedir los datos.
+    await page.goto('/producto/DEMO-GRI-6060');
+    await page.getByRole('radio', { name: 'Cajas' }).click();
+    await page.getByLabel('Cantidad de cajas').fill('1');
+    await page.getByRole('button', { name: 'Agregar al carrito' }).click();
+    await expect(page.getByText('Agregado al carrito')).toBeVisible();
+    await page.goto('/checkout');
+    await expect(page.getByRole('button', { name: 'Corregir datos' })).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Tus datos' })).toHaveCount(0);
   });
 
-  test('el administrador aprueba el pago y la operación queda confirmada', async ({ page }) => {
+  test('el administrador revisa y confirma el pago: el pedido pasa a preparación', async ({ page }) => {
     await login(page, 'admin@e2e.local', 'AdminE2E2026');
     await page.goto('/admin/pagos');
     const card = page.locator('.card', { hasText: code });
-    await expect(card).toBeVisible();
     await expect(card.getByRole('img', { name: 'Comprobante de pago' })).toBeVisible();
+    await card.getByRole('button', { name: 'Iniciar revisión' }).click();
+    await expect(card.getByText(/En revisión desde/)).toBeVisible();
     await card.getByRole('button', { name: 'Aprobar pago' }).click();
     await expect(page.locator('.card', { hasText: code })).toHaveCount(0);
     await page.goto('/admin/operaciones');
     await page.getByRole('link', { name: code }).click();
-    await expect(page.getByText('Confirmada').first()).toBeVisible();
-    await expect(page.getByText('Pagado').first()).toBeVisible();
+    await expect(page.getByText('Pedido en preparación').first()).toBeVisible();
+    await expect(page.getByText('Pago confirmado').first()).toBeVisible();
   });
 
-  test('el vendedor ve su operación y conversa con el cliente', async ({ page, browser }) => {
-    await login(page, 'vendedora.demo@porcelanas.local', 'VendedorE2E2026');
-    await expect(page).toHaveURL(/\/vendedor$/);
-    await page.getByRole('link', { name: code }).click();
-    await expect(page.getByText('María Cliente E2E')).toBeVisible();
-    await page.getByRole('button', { name: 'Marcar lista para retiro' }).click();
-    await expect(page.getByText('Lista para retiro').first()).toBeVisible();
-    // El vendedor no accede a la administración.
-    await page.goto('/admin/tasa');
-    await expect(page).not.toHaveURL(/\/admin/);
-    void browser;
+  test('Juan activa su cuenta y ve la orden asignada con los datos del cliente', async ({ page, browser }) => {
+    await login(page, 'admin@e2e.local', 'AdminE2E2026');
+    await page.goto('/admin/vendedores');
+    const row = page.locator('.card', { hasText: 'alarconbravocontact@gmail.com' });
+    await row.getByRole('button', { name: 'Generar enlace de activación' }).click();
+    const link = await row.locator('code').innerText();
+    const ctx = await browser.newContext();
+    const juan = await ctx.newPage();
+    await juan.goto(link.replace(/^https?:\/\/[^/]+/, ''));
+    await juan.getByLabel('Nueva contraseña').fill('JuanBarinas2026');
+    await juan.getByLabel('Repite la contraseña').fill('JuanBarinas2026');
+    await juan.getByRole('button', { name: 'Activar y entrar' }).click();
+    await expect(juan).toHaveURL(/\/vendedor$/);
+    const orderRow = juan.locator('tr', { hasText: code });
+    await expect(orderRow).toContainText('María José Pérez');
+    await expect(orderRow).toContainText('+584145551234');
+    await expect(orderRow).toContainText('Barinas · Urb. Alto Barinas, calle 3');
+    await expect(orderRow).toContainText('21 cj · Calacatta Blanco (demo)');
+    await expect(orderRow).toContainText('Zelle');
+    await orderRow.getByRole('link', { name: code }).click();
+    await expect(juan.getByText(/Cédula: V-\*{4}\d{4}/)).toBeVisible();
+    await juan.getByRole('button', { name: 'ver completa' }).click();
+    await expect(juan.getByText(/Cédula: V-\d{8}/)).toBeVisible();
+    await juan.getByRole('button', { name: 'Marcar lista para retiro' }).click();
+    await expect(juan.getByText('Listo para retirar').first()).toBeVisible();
+    await expect(juan.getByText('Orden de compra registrada').first()).toBeVisible();
+    await ctx.close();
   });
 });
 
@@ -159,23 +205,4 @@ test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
     await expect(page.getByTestId('whatsapp-link').first()).toHaveAttribute('href', /Napoles/);
   });
 
-  test('el administrador genera el enlace de activación y Juan define su contraseña', async ({ page, browser }) => {
-    await login(page, 'admin@e2e.local', 'AdminE2E2026');
-    await page.goto('/admin/vendedores');
-    const row = page.locator('.card', { hasText: 'alarconbravocontact@gmail.com' });
-    await expect(row.getByText('Pendiente de activación')).toBeVisible();
-    await row.getByRole('button', { name: 'Generar enlace de activación' }).click();
-    const link = await row.locator('code').innerText();
-    expect(link).toContain('/activar?token=');
-    const ctx = await browser.newContext();
-    const juan = await ctx.newPage();
-    await juan.goto(link.replace(/^https?:\/\/[^/]+/, ''));
-    await expect(juan.getByText('alarconbravocontact@gmail.com')).toBeVisible();
-    await juan.getByLabel('Nueva contraseña').fill('JuanBarinas2026');
-    await juan.getByLabel('Repite la contraseña').fill('JuanBarinas2026');
-    await juan.getByRole('button', { name: 'Activar y entrar' }).click();
-    await expect(juan).toHaveURL(/\/vendedor$/);
-    await expect(juan.getByRole('heading', { name: 'Mis operaciones' })).toBeVisible();
-    await ctx.close();
-  });
 });

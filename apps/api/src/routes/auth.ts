@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { activationSchema, loginSchema, passwordSchema, profileUpdateSchema, registerSchema } from '@porcelanas/shared';
-import { checkActivationToken, consumeActivationToken } from '../services/tokens';
+import { checkActivationToken, consumeAccessToken, consumeActivationToken } from '../services/tokens';
+import { isProfileComplete } from '../services/customers';
+import { credentialsSchema } from '@porcelanas/shared';
 import { z } from 'zod';
 import { prisma } from '../db';
 import { audit } from '../lib/audit';
@@ -19,7 +21,7 @@ export async function authRoutes(app: FastifyInstance) {
     const csrf = req.cookies[CSRF_COOKIE] ?? issueCsrfToken(reply);
     if (!req.auth) return { user: null, csrfToken: csrf };
     const a = req.auth;
-    const customer = a.customerId ? await prisma.customerProfile.findUnique({ where: { id: a.customerId } }) : null;
+    const customer = a.customerId ? await prisma.customerProfile.findUnique({ where: { id: a.customerId }, include: { user: true } }) : null;
     return {
       csrfToken: csrf,
       user: {
@@ -28,6 +30,8 @@ export async function authRoutes(app: FastifyInstance) {
         role: a.role,
         fullName: a.fullName,
         phone: customer?.phone ?? null,
+        profileComplete: customer ? isProfileComplete(customer) : false,
+        hasCredentials: customer ? customer.user.passwordHash !== '' : true,
         customerId: a.customerId,
         sellerId: a.sellerId,
         permissions: a.permissions,
@@ -77,6 +81,28 @@ export async function authRoutes(app: FastifyInstance) {
     await createSession(reply, req, user.id);
     await audit(req, 'user.activate', 'User', user.id);
     return { ok: true, role: user.role };
+  });
+
+  /** Enlace de acceso enviado por el vendedor/administración para abrir el perfil en otro dispositivo. */
+  app.post('/api/auth/access', strict, async (req, reply) => {
+    const { token } = parse(z.object({ token: z.string().trim().min(20).max(200) }), req.body);
+    const user = await consumeAccessToken(token);
+    await createSession(reply, req, user.id, { passwordless: user.passwordHash === '' });
+    await mergeGuestCart(req, reply, user.id);
+    await audit(req, 'customer.access_link_used', 'User', user.id);
+    return { ok: true, role: user.role };
+  });
+
+  /** Opcional: un cliente sin contraseña agrega correo y contraseña para entrar desde cualquier dispositivo. */
+  app.post('/api/auth/credentials', strict, async (req) => {
+    const auth = requireAuth(req);
+    const input = parse(credentialsSchema, req.body);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: auth.userId } });
+    if (user.passwordHash !== '') throw badRequest('HAS_CREDENTIALS', 'Su cuenta ya tiene correo y contraseña');
+    if (await prisma.user.findUnique({ where: { email: input.email } })) throw conflict('EMAIL_TAKEN', 'Ya existe una cuenta con ese correo');
+    await prisma.user.update({ where: { id: user.id }, data: { email: input.email, passwordHash: await hashPassword(input.password) } });
+    await audit(req, 'user.credentials_added', 'User', user.id);
+    return { ok: true };
   });
 
   app.post('/api/auth/logout', async (req, reply) => {

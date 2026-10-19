@@ -7,7 +7,8 @@ import { SellerContactCard } from '../components/SellerContact';
 import type { PaymentMethod } from '../lib/types';
 import { api, ApiError, errorMessage, newIdempotencyKey } from '../lib/api';
 import { useSession } from '../hooks/session';
-import { useCart, usePaymentMethods, useSellers, useSettings } from '../hooks/data';
+import { useCart, useCustomerProfile, usePaymentMethods, useSellers, useSettings } from '../hooks/data';
+import { CustomerProfileForm } from '../components/CustomerProfileForm';
 import type { Order, PickupAvailability, Quote } from '../lib/types';
 import { formatDateLong, formatM2, formatRate, formatUSD, formatVES, ORDER_TYPE_LABELS } from '../lib/format';
 import { Alert, ErrorState, Field, PageHeader, Spinner } from '../components/ui';
@@ -16,34 +17,73 @@ export function CheckoutPage() {
   const { user, loading } = useSession();
   const cart = useCart();
   if (loading || cart.isLoading) return <Spinner />;
-  if (!user) {
+  if (user && !user.customerId) {
     return (
       <div className="container-page max-w-xl py-16">
-        <PageHeader title="Identifícate para continuar" subtitle="Necesitas una cuenta para confirmar compras y reservas. Tu carrito se conservará." />
-        <div className="flex gap-3">
-          <Link to="/ingresar?next=/checkout" className="btn-primary">
-            Iniciar sesión
-          </Link>
-          <Link to="/registro?next=/checkout" className="btn-outline">
-            Crear cuenta
-          </Link>
-        </div>
-      </div>
-    );
-  }
-  if (!user.customerId) {
-    return (
-      <div className="container-page max-w-xl py-16">
-        <Alert kind="warning" title="Cuenta sin perfil de cliente">Las cuentas de personal no pueden realizar compras. Ingrese con una cuenta de cliente.</Alert>
+        <Alert kind="warning" title="Cuenta sin perfil de cliente">Las cuentas de personal no pueden realizar compras.</Alert>
       </div>
     );
   }
   if (cart.isError) return <ErrorState error={cart.error} onRetry={() => cart.refetch()} />;
   if (!cart.data?.items.length) return <Navigate to="/carrito" replace />;
-  return <CheckoutForm defaultName={user.fullName} defaultPhone={user.phone ?? ''} />;
+  return <CheckoutForm />;
 }
 
-function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defaultPhone: string }) {
+/** Paso 1: los cuatro datos del cliente. Se piden solo si faltan; si existen, se muestran para confirmar o corregir. */
+function CustomerStep({ onReady }: { onReady: (ready: boolean) => void }) {
+  const { user } = useSession();
+  const profile = useCustomerProfile(!!user?.customerId);
+  const [editing, setEditing] = useState(false);
+  const complete = !!user?.profileComplete && !!profile.data?.complete;
+  useEffect(() => onReady(complete && !editing), [complete, editing, onReady]);
+  if (user && profile.isLoading) return <Spinner />;
+  if (!complete || editing) {
+    return (
+      <>
+        {!user && (
+          <p className="mb-4 text-sm text-ink-soft">
+            Solo necesitamos cuatro datos para registrar tu orden. ¿Ya compraste antes?{' '}
+            <Link to="/ingresar?next=/checkout" className="underline">
+              Inicia sesión
+            </Link>
+            .
+          </p>
+        )}
+        <CustomerProfileForm initial={profile.data} submitLabel={user ? 'Guardar datos' : 'Continuar'} onSaved={() => setEditing(false)} onCancel={editing ? () => setEditing(false) : undefined} />
+      </>
+    );
+  }
+  const p = profile.data!;
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="label">Nombre</dt>
+          <dd>{p.fullName}</dd>
+        </div>
+        <div>
+          <dt className="label">Teléfono</dt>
+          <dd>{p.phone}</dd>
+        </div>
+        <div>
+          <dt className="label">Ubicación</dt>
+          <dd>
+            {p.city} · {p.addressRef}
+          </dd>
+        </div>
+        <div>
+          <dt className="label">Cédula</dt>
+          <dd>{p.documentMasked}</dd>
+        </div>
+      </dl>
+      <button type="button" className="btn-outline btn-sm self-start" onClick={() => setEditing(true)}>
+        Corregir datos
+      </button>
+    </div>
+  );
+}
+
+function CheckoutForm() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const sellers = useSellers();
@@ -54,8 +94,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
   const [sellerConfirmed, setSellerConfirmed] = useState(false);
   const [pickupDate, setPickupDate] = useState('');
   const [methodId, setMethodId] = useState('');
-  const [fullName, setFullName] = useState(defaultName);
-  const [phone, setPhone] = useState(defaultPhone);
+  const [customerReady, setCustomerReady] = useState(false);
   const [notes, setNotes] = useState('');
   const [accept, setAccept] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -118,10 +157,13 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
   const required = quote ? (type === 'PICKUP' ? listTotal : percentOfCents(listTotal, settings?.reservation.prepayMinPercent ?? 100)) : 0;
   const pickupDay = availability.data?.days.find((x) => x.date === pickupDate);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     setNotice(null);
-    const body = { quoteId: quote?.quoteId, sellerId, sellerConfirmed, type, pickupDate, paymentMethodId: methodId, fullName, phone, customerNotes: notes || undefined, acceptPolicies: accept };
+    if (!customerReady) {
+      setFields({ customer: 'Completa y guarda tus datos antes de generar la orden' });
+      return;
+    }
+    const body = { quoteId: quote?.quoteId, sellerId, sellerConfirmed, type, pickupDate, paymentMethodId: methodId, customerNotes: notes || undefined, acceptPolicies: accept };
     const parsed = checkoutSchema.safeParse(body);
     if (!parsed.success) {
       const f: Record<string, string> = {};
@@ -139,11 +181,16 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
   };
 
   return (
-    <form onSubmit={submit} className="container-page py-8" noValidate>
-      <PageHeader title="Confirmar compra" subtitle="Completa los pasos. El servidor valida inventario, precios, tasa y fecha antes de generar tu operación." />
+    <div className="container-page py-8">
+      <PageHeader title="Orden de compra" subtitle="Completa los pasos. El servidor valida inventario, precios, tasa y fecha antes de registrar tu orden." />
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
-          <Step n={1} title="Vendedor que te atenderá en la sede" icon={<UserCheck className="h-5 w-5" />}>
+          <Step n={1} title="Tus datos">
+            <CustomerStep onReady={setCustomerReady} />
+            {fields.customer && <p className="mt-2 text-sm font-medium text-[#7a3030]" role="alert">{fields.customer}</p>}
+          </Step>
+          <fieldset disabled={!customerReady} className={`space-y-6 ${customerReady ? '' : 'pointer-events-none opacity-40'}`} aria-label="Datos de la orden">
+          <Step n={2} title="Vendedor que te atenderá en la sede" icon={<UserCheck className="h-5 w-5" />}>
             {sellers.isLoading && <Spinner />}
             {sellers.isError && <ErrorState error={sellers.error} onRetry={() => sellers.refetch()} />}
             {noSellers && <Alert kind="error" title="No hay vendedores disponibles">No es posible confirmar operaciones sin un vendedor activo. Intente más tarde o contacte a la tienda.</Alert>}
@@ -168,7 +215,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             {fields.sellerId && <p className="mt-2 text-sm font-medium text-red-700" role="alert">{fields.sellerId}</p>}
           </Step>
 
-          <Step n={2} title="Modalidad y fecha de retiro" icon={<CalendarDays className="h-5 w-5" />}>
+          <Step n={3} title="Modalidad y fecha de retiro" icon={<CalendarDays className="h-5 w-5" />}>
             <div className="grid gap-2 sm:grid-cols-2">
               {(['PICKUP', 'PREPAY'] as const).map((t) => (
                 <label key={t} className={`cursor-pointer rounded-none border p-3 ${type === t ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
@@ -207,7 +254,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
                 {availability.data.days.every((d) => !d.available) && <Alert kind="warning" className="mt-3">No hay fechas disponibles en este período.</Alert>}
                 {pickupDate && (
                   <p className="mt-3 text-sm text-ink-soft">
-                    Retiro: <strong className="capitalize">{formatDateLong(pickupDate)}</strong>
+                    Retiro: <strong>{formatDateLong(pickupDate)}</strong>
                     {(() => {
                       const d = availability.data.days.find((x) => x.date === pickupDate);
                       return d?.open ? ` · horario ${d.open} – ${d.close}` : '';
@@ -219,7 +266,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             {fields.pickupDate && <p className="mt-2 text-sm font-medium text-red-700" role="alert">{fields.pickupDate}</p>}
           </Step>
 
-          <Step n={3} title="Método de pago">
+          <Step n={4} title="Método de pago">
             {methods.isLoading && <Spinner />}
             {noMethods && <Alert kind="error">Ningún método de pago está configurado todavía. La tienda debe completar los datos de recepción antes de recibir pagos.</Alert>}
             <p className="mb-3 text-xs text-ink-muted">Elegir un método no registra ningún pago: después de confirmar realizarás el pago y adjuntarás el comprobante para su verificación.</p>
@@ -243,21 +290,12 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             {fields.paymentMethodId && <p className="mt-2 text-sm font-medium text-red-700" role="alert">{fields.paymentMethodId}</p>}
           </Step>
 
-          <Step n={4} title="Datos de contacto">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nombre completo" htmlFor="co-name" error={fields.fullName}>
-                <input id="co-name" className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
-              </Field>
-              <Field label="Teléfono" htmlFor="co-phone" error={fields.phone}>
-                <input id="co-phone" className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
-              </Field>
-            </div>
-            <div className="mt-4">
-              <Field label="Observaciones (opcional)" htmlFor="co-notes">
-                <textarea id="co-notes" className="input min-h-[80px]" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} />
-              </Field>
-            </div>
+          <Step n={5} title="Observaciones (opcional)">
+            <Field label="Indicaciones para tu vendedor" htmlFor="co-notes">
+              <textarea id="co-notes" className="input min-h-[80px]" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} />
+            </Field>
           </Step>
+          </fieldset>
         </div>
 
         <aside className="card h-fit p-5 lg:sticky lg:top-24">
@@ -320,7 +358,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-muted">Fecha de retiro</dt>
-                  <dd className="text-right capitalize">{pickupDate ? formatDateLong(pickupDate) : <span className="normal-case text-[#7a3030]">Sin seleccionar</span>}</dd>
+                  <dd className="text-right">{pickupDate ? formatDateLong(pickupDate) : <span className="text-[#7a3030]">Sin seleccionar</span>}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-muted">Estado de la reserva</dt>
@@ -358,13 +396,13 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             </span>
           </label>
           {fields.acceptPolicies && <p className="mt-1 text-xs font-medium text-red-700" role="alert">{fields.acceptPolicies}</p>}
-          <button type="submit" className="btn-primary mt-4 w-full py-3" disabled={order.isPending || noSellers || noMethods || !quote || !!rateMissing || (!!selectedMethod && !selectedMethod.available)}>
+          <button type="button" onClick={submit} className="btn-primary mt-4 w-full py-3" disabled={order.isPending || !customerReady || noSellers || noMethods || !quote || !!rateMissing || (!!selectedMethod && !selectedMethod.available)}>
             <CheckCircle2 className="h-4 w-4" aria-hidden />
-            {order.isPending ? 'Confirmando…' : notice ? 'Confirmar con los nuevos importes' : 'Confirmar operación'}
+            {order.isPending ? 'Generando orden…' : notice ? 'Confirmar con los nuevos importes' : 'Generar orden de compra'}
           </button>
         </aside>
       </div>
-    </form>
+    </div>
   );
 }
 

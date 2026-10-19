@@ -21,7 +21,9 @@ import type {
 
 export interface SessionUser {
   id: string;
-  email: string;
+  email: string | null;
+  profileComplete: boolean;
+  hasCredentials: boolean;
   role: Role;
   fullName: string;
   phone: string | null;
@@ -178,6 +180,7 @@ export interface OrderPayment {
   status: PaymentStatus;
   reviewedAt: string | null;
   reviewNotes: string | null;
+  reviewStartedAt: string | null;
   reviewedBy?: string | null;
   createdAt: string;
   proofs: { id: string; status: string; mimeType: string; sizeBytes: number; originalName: string; createdAt: string }[];
@@ -210,6 +213,9 @@ export interface Order {
   cancelReason: string | null;
   contactName: string;
   contactPhone: string;
+  contactCity: string;
+  contactAddressRef: string;
+  contactDocumentMasked: string;
   customerNotes: string | null;
   createdAt: string;
   terms: Record<string, unknown> & { maxReschedules?: number; prepayMinPercent?: number };
@@ -284,4 +290,15 @@ export interface PickupAvailability {
   timezone: string;
   today: string;
   days: { date: string; available: boolean; reason: string | null; remaining: number; open: string | null; close: string | null }[];
+}
+
+export interface CustomerProfile {
+  fullName: string;
+  phone: string;
+  city: string;
+  addressRef: string;
+  documentId: string;
+  documentMasked: string;
+  complete: boolean;
+  hasCredentials: boolean;
 }

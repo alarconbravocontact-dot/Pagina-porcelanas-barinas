@@ -156,8 +156,7 @@ export const checkoutSchema = z.object({
   type: z.enum(ORDER_TYPES),
   pickupDate: dateSchema,
   paymentMethodId: uuidSchema,
-  fullName: trimmed(120).min(3),
-  phone: phoneSchema,
+  // Los datos del cliente (nombre, ubicación, teléfono y cédula) se toman de su perfil guardado.
   customerNotes: trimmed(1000).optional(),
   acceptPolicies: z.literal(true, { errorMap: () => ({ message: 'Debe aceptar las políticas comerciales' }) }),
 });
@@ -262,5 +261,10 @@ export const conversationStatusSchema = z.object({ status: z.enum(CONVERSATION_S
 
 export const activationSchema = z.object({
   token: z.string().trim().min(20).max(200),
+  password: passwordSchema,
+});
+
+export const credentialsSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Correo inválido').max(160),
   password: passwordSchema,
 });

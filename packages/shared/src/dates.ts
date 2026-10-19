@@ -58,11 +58,12 @@ export const WEEKDAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Juev
 
 export function formatDateLong(date: string): string {
   const d = new Date(`${date}T12:00:00Z`);
-  return new Intl.DateTimeFormat('es-VE', {
+  const text = new Intl.DateTimeFormat('es-VE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
   }).format(d);
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

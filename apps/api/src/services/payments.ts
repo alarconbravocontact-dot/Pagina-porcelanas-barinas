@@ -270,6 +270,21 @@ export async function reviewPayment(auth: AuthContext, paymentId: string, decisi
   }
 }
 
+/** Marca el inicio de la revisión manual (estado "pago en revisión"). Idempotente. */
+export async function startReview(auth: AuthContext, paymentId: string) {
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, include: { order: true } });
+  if (!payment) throw notFound('Pago no encontrado');
+  if (!canReviewOrder(auth, payment.order.sellerId)) throw forbidden('No está autorizado para revisar este pago');
+  if (payment.status !== 'PENDING') throw conflict('ALREADY_REVIEWED', 'Este pago ya fue revisado');
+  const res = await prisma.payment.updateMany({ where: { id: paymentId, status: 'PENDING', reviewStartedAt: null }, data: { reviewStartedAt: new Date(), reviewStartedById: auth.userId } });
+  if (res.count > 0) {
+    await prisma.orderEvent.create({ data: { orderId: payment.orderId, type: 'PAYMENT_IN_REVIEW', message: `Pago en revisión (ref. ${payment.reference})`, actorId: auth.userId } });
+    const customer = await prisma.customerProfile.findUniqueOrThrow({ where: { id: payment.order.customerId } });
+    await notify([customer.userId], { type: 'PAYMENT_IN_REVIEW', title: `Pago en revisión · ${payment.order.code}`, body: 'Tu vendedor está verificando el comprobante.', link: `/cuenta/operaciones/${payment.order.code}` });
+  }
+  return prisma.payment.findUniqueOrThrow({ where: { id: paymentId } });
+}
+
 export async function listPaymentsForReview(auth: AuthContext, status: 'PENDING' | 'APPROVED' | 'REJECTED' = 'PENDING') {
   if (!auth.permissions.includes('payments:review')) throw forbidden();
   const rows = await prisma.payment.findMany({

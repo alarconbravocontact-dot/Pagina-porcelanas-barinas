@@ -21,6 +21,11 @@ function Logo({ name }: { name: string }) {
   );
 }
 
+/** Un cliente sin correo ni contraseña pierde el acceso en este dispositivo al cerrar sesión. */
+function confirmLogout(hasCredentials: boolean) {
+  return hasCredentials || window.confirm('Tu perfil no tiene correo ni contraseña. Si cierras sesión, para volver a entrar necesitarás un enlace de acceso de tu vendedor. ¿Cerrar sesión?');
+}
+
 export function Layout() {
   const { user, logout } = useSession();
   const { data: settings } = useSettings();
@@ -103,7 +108,7 @@ export function Layout() {
                     <span className="hidden xl:inline">Mi cuenta</span>
                   </Link>
                 )}
-                <button type="button" className="btn-ghost px-2" onClick={() => logout().then(() => navigate('/'))} title="Cerrar sesión" aria-label="Cerrar sesión">
+                <button type="button" className="btn-ghost px-2" onClick={() => confirmLogout(user.hasCredentials) && logout().then(() => navigate('/'))} title="Cerrar sesión" aria-label="Cerrar sesión">
                   <LogOut className="h-5 w-5" aria-hidden />
                 </button>
               </div>
@@ -143,7 +148,7 @@ export function Layout() {
                 </Link>
               )}
               {user ? (
-                <button type="button" className="rounded-none px-2 py-2 text-left hover:bg-stone-100" onClick={() => logout().then(() => navigate('/'))}>
+                <button type="button" className="rounded-none px-2 py-2 text-left hover:bg-stone-100" onClick={() => confirmLogout(user.hasCredentials) && logout().then(() => navigate('/'))}>
                   Cerrar sesión
                 </button>
               ) : (

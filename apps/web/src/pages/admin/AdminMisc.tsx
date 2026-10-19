@@ -187,7 +187,7 @@ export function AdminSellers() {
 // ------------------------------------------------------------------ Usuarios
 interface AdminUser {
   id: string;
-  email: string;
+  email: string | null;
   role: Role;
   active: boolean;
   createdAt: string;
@@ -239,11 +239,11 @@ export function AdminUsers() {
               {q.data.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    {u.email}
+                    {u.email ?? <span className="text-ink-muted">Sin correo (cliente por sesión)</span>}
                     <p className="text-xs text-ink-muted">{u.customer?.fullName ?? u.seller?.displayName ?? ''}</p>
                   </td>
                   <td>
-                    <select className="input w-auto py-1" value={u.role} disabled={u.id === me?.id} onChange={(e) => update.mutate({ id: u.id, role: e.target.value as Role, active: u.active })} aria-label={`Rol de ${u.email}`}>
+                    <select className="input w-auto py-1" value={u.role} disabled={u.id === me?.id} onChange={(e) => update.mutate({ id: u.id, role: e.target.value as Role, active: u.active })} aria-label={`Rol de ${u.email ?? u.customer?.fullName ?? 'usuario'}`}>
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
                           {ROLE_LABELS[r]}
@@ -515,7 +515,7 @@ interface AuditRow {
   data: unknown;
   ip: string | null;
   createdAt: string;
-  actor: { email: string; role: Role } | null;
+  actor: { email: string | null; role: Role } | null;
 }
 
 export function AdminAudit() {
@@ -550,7 +550,7 @@ export function AdminAudit() {
               {q.data.items.map((a) => (
                 <tr key={a.id}>
                   <td className="whitespace-nowrap text-xs">{formatDateTime(a.createdAt)}</td>
-                  <td className="text-xs">{a.actor?.email ?? 'sistema'}</td>
+                  <td className="text-xs">{a.actor ? (a.actor.email ?? 'cliente sin correo') : 'sistema'}</td>
                   <td className="font-mono text-xs">{a.action}</td>
                   <td className="text-xs">
                     {a.entityType}

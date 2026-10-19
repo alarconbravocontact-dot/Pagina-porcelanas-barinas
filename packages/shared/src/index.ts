@@ -5,3 +5,4 @@ export * from './dates';
 export * from './settings';
 export * from './schemas';
 export * from './whatsapp';
+export * from './customer';

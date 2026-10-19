@@ -15,6 +15,7 @@ const envSchema = z.object({
   COOKIE_SECURE: bool,
   TRUST_PROXY: bool,
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).default(168),
+  CUSTOMER_SESSION_TTL_DAYS: z.coerce.number().int().min(1).default(180),
   STORAGE_DIR: z.string().default('./storage'),
   BUSINESS_TIMEZONE: z.string().default('America/Caracas'),
   JOBS_ENABLED: z

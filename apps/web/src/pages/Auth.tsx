@@ -49,11 +49,15 @@ export function LoginPage() {
         <button type="submit" className="btn-primary mt-6 w-full py-3" disabled={busy}>
           {busy ? 'Ingresando…' : 'Ingresar'}
         </button>
-        <p className="mt-4 text-center text-sm text-ink-muted">
-          ¿No tienes cuenta?{' '}
+        <p className="mt-4 text-center text-xs text-ink-muted">
+          ¿Compraste sin correo desde otro dispositivo? Pide a tu vendedor un enlace de acceso.
+        </p>
+        <p className="mt-2 text-center text-sm text-ink-muted">
+          ¿Primera compra? No necesitas cuenta: <Link to="/catalogo" className="underline">elige tus porcelanatos</Link> y completa cuatro datos. También puedes{' '}
           <Link to={`/registro${params.get('next') ? `?next=${encodeURIComponent(params.get('next')!)}` : ''}`} className="font-medium text-ink underline-offset-4 hover:underline">
-            Crear cuenta
+            crear una cuenta con correo
           </Link>
+          .
         </p>
       </form>
     </div>

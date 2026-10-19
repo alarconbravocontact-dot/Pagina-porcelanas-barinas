@@ -36,6 +36,11 @@ Abra http://localhost:5173 e ingrese con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWO
 5. Generar el enlace de activación de Juan Alarcon (Vendedores → “Generar enlace de activación” o el comando anterior).
 6. Completar dirección, horario y políticas de la sede (Configuración).
 
+### Compra sin cuenta (4 datos)
+El cliente compra sin correo ni contraseña: en el checkout ingresa **nombre completo, ubicación (ciudad y zona), teléfono y cédula**. El servidor crea su perfil y abre una sesión segura (cookie httpOnly) en ese dispositivo; en las siguientes compras sus datos se reutilizan y puede corregirlos. La cédula es única y **nunca** sirve para iniciar sesión. Para entrar desde otro dispositivo, el vendedor genera un enlace de acceso de un solo uso desde el detalle de la orden, o el cliente agrega correo y contraseña en su perfil.
+
+Tras generar la orden se pide el comprobante (si el método lo requiere) y luego se muestra el cartel “¡Tu orden de compra ha sido registrada!” con los datos del vendedor y el botón de WhatsApp con el número de orden.
+
 ### Datos del negocio incluidos
 - **Vendedor**: Juan Alarcon · Sede Barinas, Venezuela · +58 412-5552594 (WhatsApp `584125552594`) · alarconbravocontact@gmail.com · activo, con permiso para revisar pagos. La cuenta se crea **sin contraseña** y se activa con un enlace de un solo uso.
 - **Catálogo**: 72 productos de `CATALOGO_PORCELANATOS_BARINAS_guia_de_uso.pdf` (`apps/api/prisma/data/`), con precio por m² en divisas y precio BCV, formato, piezas y m² por caja, clasificación antideslizante, guía de uso por ambiente y 70 fotografías. Los SKU (`BRN-NN-ANCHOxLARGO`) son provisionales y editables. El color se deriva del nombre o, si no lo indica, del tono de la foto.
@@ -65,6 +70,7 @@ Ver [.env.example](.env.example). Ninguna contiene secretos por defecto.
 | `COOKIE_SECURE` | `true` en producción con HTTPS |
 | `TRUST_PROXY` | `true` detrás de Nginx/Caddy/etc. |
 | `SESSION_TTL_HOURS` | Duración de la sesión (por defecto 168 h) |
+| `CUSTOMER_SESSION_TTL_DAYS` | Sesión de clientes sin contraseña (por defecto 180 días) |
 | `STORAGE_DIR` | Raíz de archivos: `public/` (fotos) y `private/` (comprobantes) |
 | `BUSINESS_TIMEZONE` | Zona horaria comercial inicial (`America/Caracas`) |
 | `JOBS_ENABLED`, `JOBS_INTERVAL_SECONDS` | Tareas: vencimiento de reservas, retiros vencidos, consulta de tasa |

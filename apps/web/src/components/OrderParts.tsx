@@ -79,7 +79,7 @@ export function PickupInfo({ order }: { order: Order }) {
   return (
     <div className="text-sm">
       <p className="text-xs uppercase tracking-wide text-ink-muted">Fecha de retiro</p>
-      <p className="mt-1 font-display text-lg capitalize">{formatDateLong(order.pickupDate)}</p>
+      <p className="mt-1 font-display text-lg">{formatDateLong(order.pickupDate)}</p>
       {order.status === 'PENDING_PAYMENT' && order.expiresAt && (
         <p className="mt-1 text-xs text-amber-800">Mercancía apartada hasta {formatDateTime(order.expiresAt)} si no se acredita el pago requerido.</p>
       )}
