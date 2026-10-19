@@ -57,7 +57,7 @@ export function AdminDashboard() {
               {d.dailySales.map((x) => (
                 <div key={x.day} className="group relative flex flex-1 flex-col items-center justify-end">
                   <div className="w-full rounded-t bg-brass/80 transition group-hover:bg-brass" style={{ height: `${(x.totalCents / max) * 100}%`, minHeight: 4 }} />
-                  <span className="pointer-events-none absolute -top-10 hidden whitespace-nowrap rounded bg-ink px-2 py-1 text-[11px] text-white group-hover:block">
+                  <span className="pointer-events-none absolute -top-10 hidden whitespace-nowrap rounded-none bg-ink px-2 py-1 text-[11px] text-white group-hover:block">
                     {x.day}: {formatUSD(x.totalCents)} · {x.orders} op.
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export function AdminDashboard() {
           <ul className="mt-3 divide-y divide-stone-100 text-sm">
             {d.upcomingPickups.map((u) => (
               <li key={u.id} className="flex justify-between gap-2 py-2">
-                <Link to={`/admin/operaciones/${u.id}`} className="font-mono text-brass hover:underline">
+                <Link to={`/admin/operaciones/${u.id}`} className="font-mono text-ink underline-offset-4 hover:underline">
                   {u.code}
                 </Link>
                 <span className="text-ink-muted">

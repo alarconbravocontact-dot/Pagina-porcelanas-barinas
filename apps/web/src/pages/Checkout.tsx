@@ -135,7 +135,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             {noSellers && <Alert kind="error" title="No hay vendedores disponibles">No es posible confirmar operaciones sin un vendedor activo. Intente más tarde o contacte a la tienda.</Alert>}
             <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Vendedor">
               {sellers.data?.map((s) => (
-                <label key={s.id} className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 ${sellerId === s.id ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
+                <label key={s.id} className={`flex cursor-pointer items-center gap-3 rounded-none border p-3 ${sellerId === s.id ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
                   <input type="radio" name="seller" value={s.id} checked={sellerId === s.id} onChange={() => setSellerId(s.id)} className="h-4 w-4" />
                   <span>
                     <span className="block text-sm font-medium">{s.displayName}</span>
@@ -150,7 +150,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
           <Step n={2} title="Modalidad y fecha de retiro" icon={<CalendarDays className="h-5 w-5" />}>
             <div className="grid gap-2 sm:grid-cols-2">
               {(['PICKUP', 'PREPAY'] as const).map((t) => (
-                <label key={t} className={`cursor-pointer rounded-md border p-3 ${type === t ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
+                <label key={t} className={`cursor-pointer rounded-none border p-3 ${type === t ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
                   <span className="flex items-center gap-2">
                     <input type="radio" name="type" checked={type === t} onChange={() => setType(t)} className="h-4 w-4" />
                     <span className="text-sm font-medium">{ORDER_TYPE_LABELS[t]}</span>
@@ -176,7 +176,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
                       disabled={!d.available}
                       title={d.available ? `${d.remaining} cupos · ${d.open}–${d.close}` : (d.reason ?? '')}
                       onClick={() => setPickupDate(d.date)}
-                      className={`rounded-md border px-2 py-2 text-center text-xs transition ${pickupDate === d.date ? 'border-ink bg-ink text-white' : d.available ? 'border-stone-200 bg-white hover:border-ink' : 'cursor-not-allowed border-stone-100 bg-stone-100 text-stone-400 line-through'}`}
+                      className={`rounded-none border px-2 py-2 text-center text-xs transition ${pickupDate === d.date ? 'border-ink bg-ink text-white' : d.available ? 'border-stone-200 bg-white hover:border-ink' : 'cursor-not-allowed border-stone-100 bg-stone-100 text-stone-400 line-through'}`}
                     >
                       <span className="block font-medium capitalize">{new Intl.DateTimeFormat('es-VE', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${d.date}T12:00:00Z`))}</span>
                       <span className="block text-sm">{d.date.slice(8)}/{d.date.slice(5, 7)}</span>
@@ -203,7 +203,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             {noMethods && <Alert kind="error">La tienda no tiene métodos de pago habilitados en este momento.</Alert>}
             <div className="grid gap-2 sm:grid-cols-2">
               {methods.data?.map((m) => (
-                <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 ${methodId === m.id ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
+                <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-none border p-3 ${methodId === m.id ? 'border-ink bg-stone-50' : 'border-stone-200 hover:border-stone-400'}`}>
                   <input type="radio" name="method" checked={methodId === m.id} onChange={() => setMethodId(m.id)} className="h-4 w-4" />
                   <span className="text-sm font-medium">{m.name}</span>
                   <span className="ml-auto text-xs text-ink-muted">{m.currency === 'VES' ? 'Bs' : 'USD'}</span>
@@ -211,7 +211,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
               ))}
             </div>
             {selectedMethod && (
-              <div className="mt-3 rounded-md bg-stone-50 p-4 text-sm">
+              <div className="mt-3 rounded-none bg-stone-50 p-4 text-sm">
                 <p className="font-medium">Instrucciones de {selectedMethod.name}</p>
                 <p className="mt-1 whitespace-pre-line text-ink-soft">{selectedMethod.instructions}</p>
                 {selectedMethod.requiresProof && <p className="mt-2 text-xs text-ink-muted">Después de confirmar podrás adjuntar el comprobante (JPG, PNG o WebP).</p>}
@@ -269,7 +269,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
                   <dt className="text-ink-muted">Equivalente</dt>
                   <dd>{quote.totalVesCents != null ? formatVES(quote.totalVesCents) : '—'}</dd>
                 </div>
-                <div className="flex justify-between rounded bg-[#f7efe5] px-2 py-1.5">
+                <div className="flex justify-between border-y border-stone-200 py-2">
                   <dt>{type === 'PICKUP' ? 'Pago requerido' : 'Prepago mínimo'}</dt>
                   <dd className="font-semibold">{formatUSD(required)}</dd>
                 </div>
@@ -289,7 +289,7 @@ function CheckoutForm({ defaultName, defaultPhone }: { defaultName: string; defa
             <input type="checkbox" className="mt-0.5 h-4 w-4" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
             <span>
               Acepto las{' '}
-              <Link to="/politicas" target="_blank" className="text-brass underline">
+              <Link to="/politicas" target="_blank" className="text-ink underline">
                 políticas comerciales
               </Link>{' '}
               vigentes.
@@ -312,7 +312,7 @@ function Step({ n, title, icon, children }: { n: number; title: string; icon?: R
       <h2 id={`step-${n}`} className="flex items-center gap-3 text-lg">
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">{n}</span>
         {title}
-        {icon && <span className="ml-auto text-brass">{icon}</span>}
+        {icon && <span className="ml-auto text-ink-soft">{icon}</span>}
       </h2>
       <div className="mt-4">{children}</div>
     </section>

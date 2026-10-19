@@ -37,15 +37,15 @@ export function ProductDetailPage() {
       <Link to="/catalogo" className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
         <ChevronLeft className="h-4 w-4" aria-hidden /> Volver al catálogo
       </Link>
-      <div className="mt-4 grid gap-10 lg:grid-cols-2">
+      <div className="mt-8 grid gap-14 lg:grid-cols-2">
         <div>
-          <div className="card overflow-hidden">
-            {img ? <img src={img.url} alt={img.alt} className="aspect-square w-full object-cover" /> : <ProductImage product={p} className="aspect-square w-full" />}
+          <div className="bg-stone-100 p-8 sm:p-14">
+            {img ? <img src={img.url} alt={img.alt} className="aspect-square w-full object-cover shadow-gallery" /> : <ProductImage product={p} className="aspect-square w-full" />}
           </div>
           {p.images.length > 1 && (
             <div className="mt-3 flex gap-2 overflow-x-auto">
               {p.images.map((im, i) => (
-                <button key={im.id} type="button" onClick={() => setActive(i)} className={`h-20 w-20 shrink-0 overflow-hidden rounded border-2 ${i === active ? 'border-ink' : 'border-transparent'}`} aria-label={`Ver imagen ${i + 1}`}>
+                <button key={im.id} type="button" onClick={() => setActive(i)} className={`h-20 w-20 shrink-0 overflow-hidden border ${i === active ? 'border-ink' : 'border-stone-200'}`} aria-label={`Ver imagen ${i + 1}`}>
                   <img src={im.url} alt="" className="h-full w-full object-cover" />
                 </button>
               ))}
@@ -55,14 +55,14 @@ export function ProductDetailPage() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <StockBadge status={p.stockStatus} available={p.availableBoxes} />
-            {p.isDemo && <span className="chip bg-ink text-white">Producto de demostración</span>}
+            {p.isDemo && <span className="chip border border-stone-300 text-ink-muted">Producto de demostración</span>}
           </div>
-          <h1 className="mt-3 text-3xl sm:text-4xl">{p.name}</h1>
+          <h1 className="mt-5 text-4xl sm:text-5xl">{p.name}</h1>
           <p className="mt-1 text-sm text-ink-muted">SKU {p.sku}</p>
           <div className="mt-5 flex items-baseline gap-4">
-            <p className="text-3xl font-semibold">
+            <p className="font-display text-4xl font-light">
               {formatUSD(p.priceM2Cents)}
-              <span className="text-base font-normal text-ink-muted"> /m²</span>
+              <span className="font-sans text-sm text-ink-muted"> /m²</span>
             </p>
             <p className="text-ink-muted">{formatUSD(p.priceBoxCents)} por caja</p>
           </div>

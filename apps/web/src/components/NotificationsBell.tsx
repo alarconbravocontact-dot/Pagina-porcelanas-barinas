@@ -37,14 +37,14 @@ export function NotificationsBell() {
     <div className="relative" ref={ref}>
       <button type="button" className="btn-ghost relative px-2" onClick={() => setOpen((v) => !v)} aria-label={`Notificaciones${unread ? ` (${unread} sin leer)` : ''}`} aria-expanded={open}>
         <Bell className="h-5 w-5" aria-hidden />
-        {unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brass px-1 text-[10px] font-bold text-white">{unread > 9 ? '9+' : unread}</span>}
+        {unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-bold text-white">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-stone-200 bg-white shadow-xl">
+        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] border border-stone-200 bg-white shadow-gallery">
           <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
             <p className="text-sm font-semibold">Notificaciones</p>
             {unread > 0 && (
-              <button type="button" className="text-xs font-medium text-brass hover:underline" onClick={() => markAll.mutate()}>
+              <button type="button" className="text-xs font-medium text-ink underline-offset-4 hover:underline" onClick={() => markAll.mutate()}>
                 Marcar todas como leídas
               </button>
             )}
@@ -54,7 +54,7 @@ export function NotificationsBell() {
             {q.isError && <li className="px-4 py-6 text-center text-sm text-red-700">No se pudieron cargar</li>}
             {q.data?.items.length === 0 && <li className="px-4 py-6 text-center text-sm text-ink-muted">Sin notificaciones</li>}
             {q.data?.items.map((n) => (
-              <li key={n.id} className={`border-b border-stone-50 ${n.readAt ? '' : 'bg-[#fbf6ef]'}`}>
+              <li key={n.id} className={`border-b border-stone-50 ${n.readAt ? '' : 'bg-stone-50'}`}>
                 <Link
                   to={n.link ?? '#'}
                   className="block px-4 py-3 hover:bg-stone-50"

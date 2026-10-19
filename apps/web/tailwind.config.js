@@ -1,19 +1,21 @@
 /** @type {import('tailwindcss').Config} */
+// Paleta "galería de porcelana": muros blancos, grises fríos y tinta grafito.
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ink: { DEFAULT: '#1d1b19', soft: '#3b3733', muted: '#6f6a64' },
-        stone: { 50: '#faf8f5', 100: '#f3efe9', 200: '#e7e0d6', 300: '#d6ccbe', 400: '#b8aa97', 500: '#968673' },
-        brass: { DEFAULT: '#9a6b3c', dark: '#7c5530', light: '#c9a27a' },
-        moss: '#4f6b4a',
+        ink: { DEFAULT: '#262626', soft: '#4a4a4a', muted: '#8a8a8a' },
+        stone: { 50: '#fafafa', 100: '#f4f4f3', 200: '#e8e8e6', 300: '#d6d6d3', 400: '#a8a8a5', 500: '#787876' },
+        brass: { DEFAULT: '#6b6b69', dark: '#3d3d3c', light: '#c9c9c6' },
+        moss: '#5f6b62',
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
-      boxShadow: { card: '0 1px 2px rgba(29,27,25,.06), 0 8px 24px -12px rgba(29,27,25,.18)' },
+      boxShadow: { card: 'none', gallery: '0 30px 60px -40px rgba(0,0,0,.25)' },
+      letterSpacing: { gallery: '0.28em' },
     },
   },
   plugins: [],

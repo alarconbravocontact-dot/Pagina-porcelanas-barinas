@@ -12,16 +12,16 @@ export function Spinner({ label = 'Cargando…', className = '' }: { label?: str
 }
 
 const alertStyles = {
-  info: { cls: 'border-sky-200 bg-sky-50 text-sky-900', Icon: Info },
-  success: { cls: 'border-emerald-200 bg-emerald-50 text-emerald-900', Icon: CheckCircle2 },
-  warning: { cls: 'border-amber-200 bg-amber-50 text-amber-900', Icon: TriangleAlert },
-  error: { cls: 'border-red-200 bg-red-50 text-red-900', Icon: AlertCircle },
+  info: { cls: 'border-stone-200 bg-stone-50 text-ink-soft', Icon: Info },
+  success: { cls: 'border-[#d5ded8] bg-[#f3f6f4] text-[#2f4537]', Icon: CheckCircle2 },
+  warning: { cls: 'border-[#e6dfcf] bg-[#f8f6f0] text-[#5c4c22]', Icon: TriangleAlert },
+  error: { cls: 'border-[#e8d6d6] bg-[#f8f2f2] text-[#6e2a2a]', Icon: AlertCircle },
 };
 
 export function Alert({ kind = 'info', title, children, className = '' }: { kind?: keyof typeof alertStyles; title?: string; children?: ReactNode; className?: string }) {
   const { cls, Icon } = alertStyles[kind];
   return (
-    <div role={kind === 'error' ? 'alert' : 'status'} className={`flex gap-3 rounded-md border px-4 py-3 text-sm ${cls} ${className}`}>
+    <div role={kind === 'error' ? 'alert' : 'status'} className={`flex gap-3 border-l-2 px-4 py-3 text-sm ${cls} ${className}`}>
       <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <div className="min-w-0">
         {title && <p className="font-semibold">{title}</p>}
@@ -48,8 +48,8 @@ export function ErrorState({ error, onRetry, title = 'No se pudo cargar la infor
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-stone-300 bg-white/60 px-6 py-12 text-center">
-      <p className="font-display text-lg">{title}</p>
+    <div className="border border-stone-200 bg-stone-50 px-6 py-16 text-center">
+      <p className="font-display text-2xl font-light">{title}</p>
       {children && <div className="mx-auto mt-2 max-w-md text-sm text-ink-muted">{children}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -74,12 +74,12 @@ export function Field({ label, error, hint, children, htmlFor }: { label: string
 }
 
 const tone: Record<string, string> = {
-  gray: 'bg-stone-100 text-ink-soft',
-  green: 'bg-emerald-100 text-emerald-800',
-  amber: 'bg-amber-100 text-amber-800',
-  red: 'bg-red-100 text-red-800',
-  blue: 'bg-sky-100 text-sky-800',
-  brass: 'bg-[#f3e6d7] text-brass-dark',
+  gray: 'border border-stone-200 bg-white text-ink-muted',
+  green: 'border border-[#d5ded8] bg-[#f3f6f4] text-[#3f5546]',
+  amber: 'border border-[#e6dfcf] bg-[#f8f6f0] text-[#6b5a2e]',
+  red: 'border border-[#e8d6d6] bg-[#f8f2f2] text-[#7a3030]',
+  blue: 'border border-stone-300 bg-stone-100 text-ink',
+  brass: 'border border-ink bg-white text-ink',
 };
 
 export function Badge({ children, color = 'gray' }: { children: ReactNode; color?: keyof typeof tone }) {
@@ -90,7 +90,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl sm:text-3xl">{title}</h1>
+        <h1 className="text-3xl sm:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -118,8 +118,8 @@ export function Pagination({ page, totalPages, onPage }: { page: number; totalPa
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
     <div className="card p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
-      <p className="mt-2 font-display text-2xl">{value}</p>
+      <p className="eyebrow">{label}</p>
+      <p className="mt-3 font-display text-3xl font-light">{value}</p>
       {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
     </div>
   );

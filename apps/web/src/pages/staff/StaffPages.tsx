@@ -82,7 +82,7 @@ export function StaffOrders() {
               {q.data.items.map((o) => (
                 <tr key={o.id} className="hover:bg-stone-50">
                   <td>
-                    <Link to={`${base}/operaciones/${o.id}`} className="font-mono font-semibold text-brass hover:underline">
+                    <Link to={`${base}/operaciones/${o.id}`} className="font-mono font-semibold text-ink underline-offset-4 hover:underline">
                       {o.code}
                     </Link>
                     <p className="text-xs text-ink-muted">{o.type === 'PICKUP' ? 'Retiro programado' : 'Prepago'}</p>
@@ -197,7 +197,7 @@ export function StaffOrderDetail() {
             {addNote.isError && <Alert kind="error" className="mt-2">{errorMessage(addNote.error)}</Alert>}
             <ul className="mt-3 space-y-2">
               {o.notes?.map((n) => (
-                <li key={n.id} className={`rounded-md p-3 text-sm ${n.kind === 'INCIDENT' ? 'bg-amber-50' : 'bg-stone-50'}`}>
+                <li key={n.id} className={`rounded-none p-3 text-sm ${n.kind === 'INCIDENT' ? 'bg-amber-50' : 'bg-stone-50'}`}>
                   <p className="text-xs font-semibold">{n.kind === 'INCIDENT' ? 'Incidencia' : 'Observación'} · {n.author} · {formatDateTime(n.createdAt)}</p>
                   <p className="mt-1">{n.body}</p>
                 </li>
@@ -214,11 +214,11 @@ export function StaffOrderDetail() {
             <h2 className="mb-2 text-lg">Cliente</h2>
             <p className="font-medium">{o.contactName}</p>
             <p>
-              <a href={`tel:${o.contactPhone.replace(/\s/g, '')}`} className="text-brass hover:underline">
+              <a href={`tel:${o.contactPhone.replace(/\s/g, '')}`} className="text-ink underline-offset-4 hover:underline">
                 {o.contactPhone}
               </a>
             </p>
-            {o.customerNotes && <p className="mt-2 rounded bg-stone-50 p-2 text-xs">“{o.customerNotes}”</p>}
+            {o.customerNotes && <p className="mt-2 rounded-none bg-stone-50 p-2 text-xs">“{o.customerNotes}”</p>}
             <p className="mt-3 text-xs uppercase tracking-wide text-ink-muted">Vendedor</p>
             <p>{o.seller.displayName}</p>
           </section>
@@ -248,10 +248,10 @@ function ReviewControls({ payment, onDone }: { payment: OrderPayment; onDone: ()
   const [notes, setNotes] = useState('');
   const m = useMutation({ mutationFn: (decision: 'APPROVE' | 'REJECT') => api(`/api/staff/payments/${payment.id}/review`, { body: { decision, notes: notes || undefined } }), onSuccess: onDone });
   return (
-    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+    <div className="mt-2 rounded-none border border-amber-200 bg-amber-50 p-3">
       {payment.proofs[0] && (
         <a href={`/api/proofs/${payment.proofs[0].id}`} target="_blank" rel="noopener noreferrer">
-          <img src={`/api/proofs/${payment.proofs[0].id}`} alt="Comprobante de pago" className="mb-2 max-h-56 rounded border border-stone-200 bg-white object-contain" />
+          <img src={`/api/proofs/${payment.proofs[0].id}`} alt="Comprobante de pago" className="mb-2 max-h-56 rounded-none border border-stone-200 bg-white object-contain" />
         </a>
       )}
       <input className="input" placeholder="Observaciones (obligatorio para rechazar)" value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Observaciones de revisión" />
@@ -290,7 +290,7 @@ function InPersonPayment({ order, onDone }: { order: Order; onDone: () => void }
     );
   return (
     <form
-      className="mt-3 grid gap-2 rounded-md bg-stone-50 p-3 sm:grid-cols-2"
+      className="mt-3 grid gap-2 rounded-none bg-stone-50 p-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         m.mutate();
@@ -352,7 +352,7 @@ export function StaffPayments() {
         {q.data?.map((p) => (
           <div key={p.id} className="card p-4">
             <div className="flex items-center justify-between">
-              <Link to={`${base}/operaciones/${p.order.id}`} className="font-mono font-semibold text-brass hover:underline">
+              <Link to={`${base}/operaciones/${p.order.id}`} className="font-mono font-semibold text-ink underline-offset-4 hover:underline">
                 {p.order.code}
               </Link>
               <PaymentStatusBadge status={p.status} />
@@ -375,7 +375,7 @@ export function StaffPayments() {
               <ReviewControls payment={p as unknown as OrderPayment} onDone={() => qc.invalidateQueries({ queryKey: ['staff-payments'] })} />
             ) : (
               p.proofs[0] && (
-                <a href={`/api/proofs/${p.proofs[0].id}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-brass underline">
+                <a href={`/api/proofs/${p.proofs[0].id}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-ink underline">
                   Ver comprobante
                 </a>
               )
@@ -434,7 +434,7 @@ export function StaffPickups() {
                   <ul className="mt-2 space-y-1.5">
                     {list.map((o) => (
                       <li key={o.id} className="text-xs">
-                        <Link to={`${base}/operaciones/${o.id}`} className="font-mono font-semibold text-brass hover:underline">
+                        <Link to={`${base}/operaciones/${o.id}`} className="font-mono font-semibold text-ink underline-offset-4 hover:underline">
                           {o.code}
                         </Link>{' '}
                         · {o.contactName} · {o.totalBoxes} cajas · {ORDER_STATUS_LABELS[o.status]}

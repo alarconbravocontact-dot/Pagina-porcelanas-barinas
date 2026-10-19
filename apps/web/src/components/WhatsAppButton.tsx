@@ -13,15 +13,15 @@ export function WhatsAppButton({ message, variant = 'inline', label = 'Consultar
         href={link}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg transition hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-stone-300 bg-white text-ink shadow-gallery transition hover:border-ink"
         aria-label={label}
       >
-        <MessageCircle className="h-7 w-7" aria-hidden />
+        <MessageCircle className="h-5 w-5" aria-hidden />
       </a>
     );
   }
   return (
-    <a href={link} target="_blank" rel="noopener noreferrer" className="btn border border-[#1f8f4e] bg-white text-[#1f8f4e] hover:bg-[#eef8f1]">
+    <a href={link} target="_blank" rel="noopener noreferrer" className="btn-outline">
       <MessageCircle className="h-4 w-4" aria-hidden /> {label}
     </a>
   );

@@ -43,7 +43,7 @@ export function StaffLayout({ area }: { area: 'seller' | 'admin' }) {
                 key={l.to}
                 to={l.to}
                 end={l.end}
-                className={({ isActive }) => `flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm ${isActive ? 'bg-ink text-white' : 'text-ink-soft hover:bg-stone-100'}`}
+                className={({ isActive }) => `flex shrink-0 items-center gap-2 rounded-none px-3 py-2 text-sm ${isActive ? 'bg-ink text-white' : 'text-ink-soft hover:bg-stone-100'}`}
               >
                 <l.Icon className="h-4 w-4" aria-hidden />
                 {l.label}

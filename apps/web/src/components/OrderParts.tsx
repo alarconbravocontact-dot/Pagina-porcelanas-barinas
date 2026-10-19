@@ -121,7 +121,7 @@ export function PaymentsList({ order, renderExtra }: { order: Order; renderExtra
           {p.proofs.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-3 text-xs">
               {p.proofs.map((pr, idx) => (
-                <a key={pr.id} href={`/api/proofs/${pr.id}`} target="_blank" rel="noopener noreferrer" className={`underline ${pr.status === 'REPLACED' ? 'text-ink-muted line-through' : 'text-brass'}`}>
+                <a key={pr.id} href={`/api/proofs/${pr.id}`} target="_blank" rel="noopener noreferrer" className={`underline ${pr.status === 'REPLACED' ? 'text-ink-muted line-through' : 'text-ink-soft'}`}>
                   Comprobante {p.proofs.length - idx}
                 </a>
               ))}

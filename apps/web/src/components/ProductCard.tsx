@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '../lib/types';
 import { FINISH_LABELS, formatUSD } from '../lib/format';
-import { StockBadge } from './StatusBadges';
 
 export function ProductImage({ product, className = '' }: { product: Pick<Product, 'images' | 'name' | 'color'>; className?: string }) {
   const img = product.images[0];
   if (!img) {
     return (
-      <div className={`flex items-center justify-center bg-stone-200 text-xs text-ink-muted ${className}`} role="img" aria-label={`${product.name} (sin fotografía)`}>
+      <div className={`flex items-center justify-center bg-stone-100 text-[11px] uppercase tracking-gallery text-ink-muted ${className}`} role="img" aria-label={`${product.name} (sin fotografía)`}>
         Sin fotografía
       </div>
     );
@@ -15,33 +14,36 @@ export function ProductImage({ product, className = '' }: { product: Pick<Produc
   return <img src={img.url} alt={img.alt || product.name} loading="lazy" className={`object-cover ${className}`} />;
 }
 
+const stockText = (p: Product) => (p.stockStatus === 'OUT' ? 'Agotado' : p.stockStatus === 'LOW' ? `Últimas ${p.availableBoxes} cajas` : 'Disponible');
+
+/** Pieza expuesta como en una galería: la muestra sobre muro claro y una cartela debajo. */
 export function ProductCard({ product }: { product: Product }) {
   return (
-    <Link to={`/producto/${product.sku}`} className="group card flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg">
-      <div className="relative aspect-square overflow-hidden">
-        <ProductImage product={product} className="h-full w-full transition duration-500 group-hover:scale-105" />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1">
-          <StockBadge status={product.stockStatus} available={product.availableBoxes} />
-          {product.isDemo && <span className="chip bg-ink/80 text-white">Demo</span>}
+    <Link to={`/producto/${product.sku}`} className="group block">
+      <div className="bg-stone-100 p-6 transition duration-500 group-hover:bg-stone-200/70 sm:p-8">
+        <div className="relative aspect-square overflow-hidden shadow-gallery">
+          <ProductImage product={product} className={`h-full w-full transition duration-700 group-hover:scale-[1.03] ${product.stockStatus === 'OUT' ? 'grayscale opacity-70' : ''}`} />
         </div>
       </div>
-      <div className="flex flex-1 flex-col p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-ink-muted">
-          {product.sizeLabel} cm · {FINISH_LABELS[product.finish]}
-        </p>
-        <h3 className="mt-1 font-display text-lg leading-snug">{product.name}</h3>
-        <p className="text-xs text-ink-muted">SKU {product.sku}</p>
-        <div className="mt-auto flex items-end justify-between pt-4">
-          <div>
-            <p className="text-lg font-semibold">
-              {formatUSD(product.priceM2Cents)}
-              <span className="text-xs font-normal text-ink-muted"> /m²</span>
-            </p>
-            <p className="text-xs text-ink-muted">{formatUSD(product.priceBoxCents)} por caja</p>
-          </div>
-          <span className="text-xs font-medium text-brass group-hover:underline">Ver y calcular →</span>
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="truncate font-display text-xl font-light leading-tight">{product.name}</h3>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-ink-muted">
+            {product.sizeLabel} cm · {FINISH_LABELS[product.finish]} · {product.sku}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm">
+            {formatUSD(product.priceM2Cents)}
+            <span className="text-ink-muted"> /m²</span>
+          </p>
+          <p className="text-[11px] text-ink-muted">{formatUSD(product.priceBoxCents)} caja</p>
         </div>
       </div>
+      <p className={`mt-2 text-[10px] uppercase tracking-gallery ${product.stockStatus === 'OUT' ? 'text-[#7a3030]' : 'text-ink-muted'}`}>
+        {stockText(product)}
+        {product.isDemo && ' · Demostración'}
+      </p>
     </Link>
   );
 }

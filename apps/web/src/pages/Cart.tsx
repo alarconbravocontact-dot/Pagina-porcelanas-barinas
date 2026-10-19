@@ -82,7 +82,7 @@ function CartRow({ item, onUpdate, onRemove, busy }: { item: CartView['items'][n
   const [m2, setM2] = useState(item.mode === 'M2' ? item.quantity : '');
   return (
     <div className={`card flex gap-4 p-4 ${l.error ? 'border-amber-300' : ''}`}>
-      {l.imageUrl ? <img src={l.imageUrl} alt="" className="h-24 w-24 shrink-0 rounded object-cover" /> : <div className="h-24 w-24 shrink-0 rounded bg-stone-200" />}
+      {l.imageUrl ? <img src={l.imageUrl} alt="" className="h-24 w-24 shrink-0 rounded-none object-cover" /> : <div className="h-24 w-24 shrink-0 rounded-none bg-stone-200" />}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -99,7 +99,7 @@ function CartRow({ item, onUpdate, onRemove, busy }: { item: CartView['items'][n
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-4">
           {item.mode === 'BOXES' ? (
-            <div className="flex items-center rounded-md border border-stone-300">
+            <div className="flex items-center rounded-none border border-stone-300">
               <button type="button" className="px-2 py-1.5" disabled={busy || l.boxes <= 1} onClick={() => onUpdate('BOXES', String(l.boxes - 1))} aria-label="Restar una caja">
                 <Minus className="h-4 w-4" />
               </button>

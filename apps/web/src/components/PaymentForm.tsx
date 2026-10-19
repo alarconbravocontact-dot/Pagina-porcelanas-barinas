@@ -89,12 +89,12 @@ export function PaymentForm({ order }: { order: Order }) {
         </select>
       </Field>
       {method && (
-        <div className="rounded-md bg-stone-50 p-3 text-sm">
+        <div className="rounded-none bg-stone-50 p-3 text-sm">
           <p className="whitespace-pre-line text-ink-soft">{method.instructions}</p>
           <p className="mt-2 text-xs text-ink-muted">
             Importe sugerido: <strong>{method.currency === 'VES' ? formatVES(suggested) : formatUSD(suggested)}</strong>
             {method.currency === 'VES' && ' (calculado con la tasa fijada en su operación)'}
-            <button type="button" className="ml-2 text-brass underline" onClick={() => setAmount(centsToDecimalString(suggested))}>
+            <button type="button" className="ml-2 text-ink underline" onClick={() => setAmount(centsToDecimalString(suggested))}>
               usar
             </button>
           </p>
@@ -115,7 +115,7 @@ export function PaymentForm({ order }: { order: Order }) {
         </Field>
       </div>
       <Field label="Comprobante" htmlFor="pf-file" error={fields.file} hint={`JPG, PNG o WebP · máximo ${maxMB} MB`}>
-        <input id="pf-file" ref={fileInput} type="file" accept={ACCEPT} className="block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-stone-200 file:px-3 file:py-2 file:text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <input id="pf-file" ref={fileInput} type="file" accept={ACCEPT} className="block w-full text-sm file:mr-3 file:rounded-none file:border-0 file:bg-stone-200 file:px-3 file:py-2 file:text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
       </Field>
       <button type="submit" className="btn-primary" disabled={m.isPending}>
         <Upload className="h-4 w-4" aria-hidden /> {m.isPending ? 'Enviando…' : 'Registrar pago'}

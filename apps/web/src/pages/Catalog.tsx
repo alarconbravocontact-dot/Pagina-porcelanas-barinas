@@ -94,7 +94,7 @@ export function CatalogPage() {
         </form>
       </FilterGroup>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" className="h-4 w-4 rounded border-stone-300" checked={params.get('available') === 'true'} onChange={(e) => set('available', e.target.checked ? 'true' : null)} />
+        <input type="checkbox" className="h-4 w-4 rounded-none border-stone-300" checked={params.get('available') === 'true'} onChange={(e) => set('available', e.target.checked ? 'true' : null)} />
         Solo con existencias disponibles
       </label>
       {activeCount > 0 && (
@@ -117,12 +117,13 @@ export function CatalogPage() {
     <div className="container-page py-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl">Catálogo</h1>
+          <p className="eyebrow">Galería</p>
+          <h1 className="mt-3 text-4xl sm:text-5xl">Catálogo</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {params.get('q') ? (
               <>
                 Resultados para “{params.get('q')}” ·{' '}
-                <button type="button" className="text-brass underline" onClick={() => set('q', null)}>
+                <button type="button" className="text-ink underline" onClick={() => set('q', null)}>
                   quitar búsqueda
                 </button>
               </>
@@ -146,8 +147,8 @@ export function CatalogPage() {
           </select>
         </div>
       </div>
-      <div className="mt-6 grid gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className={`${showFilters ? 'block' : 'hidden'} card h-fit p-5 lg:block`} aria-label="Filtros">
+      <div className="mt-10 grid gap-10 lg:grid-cols-[240px_1fr]">
+        <aside className={`${showFilters ? 'block' : 'hidden'} h-fit border-b border-stone-200 pb-6 lg:block lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8`} aria-label="Filtros">
           {facets.isError ? <p className="text-sm text-red-700">No se pudieron cargar los filtros.</p> : filters}
         </aside>
         <div>
@@ -162,7 +163,7 @@ export function CatalogPage() {
               {list.data.items.length === 0 ? (
                 <EmptyState title="No encontramos productos con esos filtros">Prueba con otros criterios o limpia los filtros.</EmptyState>
               ) : (
-                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 xl:grid-cols-3">
                   {list.data.items.map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}

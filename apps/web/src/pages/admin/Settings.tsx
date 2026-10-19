@@ -207,7 +207,7 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
         <>
           <p className="text-xs text-ink-muted">Si la lista está vacía, el sitio muestra respuestas generadas a partir de la configuración vigente.</p>
           {items.map((it, i) => (
-            <div key={i} className="space-y-2 rounded-md border border-stone-200 p-3">
+            <div key={i} className="space-y-2 rounded-none border border-stone-200 p-3">
               <div className="flex gap-2">
                 <input className="input" placeholder="Pregunta" value={it.q} onChange={(e) => set('items', items.map((x, j) => (j === i ? { ...x, q: e.target.value } : x)))} aria-label={`Pregunta ${i + 1}`} />
                 <button type="button" className="btn-ghost px-2 text-red-700" onClick={() => set('items', items.filter((_, j) => j !== i))} aria-label="Eliminar pregunta">
@@ -263,9 +263,9 @@ function HeroUpload({ current }: { current: string }) {
     },
   });
   return (
-    <div className="rounded-md border border-stone-200 p-3">
+    <div className="rounded-none border border-stone-200 p-3">
       <p className="label">Fotografía principal del inicio</p>
-      {current ? <img src={current} alt="Imagen principal actual" className="mb-2 max-h-40 rounded object-cover" /> : <p className="mb-2 text-xs text-ink-muted">Sin imagen: se muestran fotografías del catálogo.</p>}
+      {current ? <img src={current} alt="Imagen principal actual" className="mb-2 max-h-40 rounded-none object-cover" /> : <p className="mb-2 text-xs text-ink-muted">Sin imagen: se muestran fotografías del catálogo.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <input type="file" accept="image/jpeg,image/png,image/webp" className="text-xs" onChange={(e) => setFile(e.target.files?.[0] ?? null)} aria-label="Imagen principal" />
         <button type="button" className="btn-outline btn-sm" disabled={!file || m.isPending} onClick={() => m.mutate()}>

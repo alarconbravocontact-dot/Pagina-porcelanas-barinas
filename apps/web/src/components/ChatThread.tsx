@@ -111,7 +111,7 @@ export function ChatThread({ conversationId, orderLinkBase }: { conversationId: 
               <>
                 {' · '}
                 {orderLinkBase ? (
-                  <Link className="text-brass hover:underline" to={`${orderLinkBase}${side === 'customer' ? conv.order.code : conv.order.id}`}>
+                  <Link className="text-ink underline-offset-4 hover:underline" to={`${orderLinkBase}${side === 'customer' ? conv.order.code : conv.order.id}`}>
                     Operación {conv.order.code}
                   </Link>
                 ) : (
@@ -131,7 +131,7 @@ export function ChatThread({ conversationId, orderLinkBase }: { conversationId: 
           const read = !!otherReadAt && new Date(otherReadAt) >= new Date(m.createdAt);
           return (
             <div key={m.id} className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm ${own ? 'bg-ink text-white' : 'bg-white text-ink'}`}>
+              <div className={`max-w-[80%] rounded-none px-3 py-2 text-sm shadow-sm ${own ? 'bg-ink text-white' : 'bg-white text-ink'}`}>
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
                 <p className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${own ? 'text-stone-300' : 'text-ink-muted'}`} title={formatDateTime(m.createdAt)}>
                   {formatTime(m.createdAt)}

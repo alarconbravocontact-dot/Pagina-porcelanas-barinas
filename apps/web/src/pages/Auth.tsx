@@ -51,7 +51,7 @@ export function LoginPage() {
         </button>
         <p className="mt-4 text-center text-sm text-ink-muted">
           ¿No tienes cuenta?{' '}
-          <Link to={`/registro${params.get('next') ? `?next=${encodeURIComponent(params.get('next')!)}` : ''}`} className="font-medium text-brass hover:underline">
+          <Link to={`/registro${params.get('next') ? `?next=${encodeURIComponent(params.get('next')!)}` : ''}`} className="font-medium text-ink underline-offset-4 hover:underline">
             Crear cuenta
           </Link>
         </p>
@@ -119,7 +119,7 @@ export function RegisterPage() {
         </button>
         <p className="mt-4 text-center text-sm text-ink-muted">
           ¿Ya tienes cuenta?{' '}
-          <Link to={`/ingresar${params.get('next') ? `?next=${encodeURIComponent(params.get('next')!)}` : ''}`} className="font-medium text-brass hover:underline">
+          <Link to={`/ingresar${params.get('next') ? `?next=${encodeURIComponent(params.get('next')!)}` : ''}`} className="font-medium text-ink underline-offset-4 hover:underline">
             Iniciar sesión
           </Link>
         </p>

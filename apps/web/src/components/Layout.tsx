@@ -10,13 +10,13 @@ import { useEffect } from 'react';
 function Logo({ name }: { name: string }) {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label={`${name} — inicio`}>
-      <span className="grid h-8 w-8 grid-cols-2 gap-0.5 rounded bg-ink p-1.5" aria-hidden>
+      <span className="grid h-6 w-6 grid-cols-2 gap-px border border-ink p-px" aria-hidden>
         <span className="bg-stone-200" />
-        <span className="bg-brass-light" />
-        <span className="bg-brass-light" />
+        <span className="bg-white" />
+        <span className="bg-white" />
         <span className="bg-stone-200" />
       </span>
-      <span className="font-display text-lg leading-none">{name}</span>
+      <span className="font-display text-2xl font-light leading-none tracking-wide">{name}</span>
     </Link>
   );
 }
@@ -46,21 +46,21 @@ export function Layout() {
     navigate(`/catalogo${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`);
   };
 
-  const navCls = ({ isActive }: { isActive: boolean }) => `text-sm font-medium transition hover:text-brass ${isActive ? 'text-brass' : 'text-ink-soft'}`;
+  const navCls = ({ isActive }: { isActive: boolean }) => `text-[11px] uppercase tracking-gallery transition hover:text-ink ${isActive ? 'text-ink' : 'text-ink-muted'}`;
   const staffLink = user?.role === 'ADMIN' ? { to: '/admin', label: 'Administración' } : user?.role === 'SELLER' ? { to: '/vendedor', label: 'Panel de vendedor' } : null;
 
   return (
     <div className="flex min-h-screen flex-col">
-      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2">
+      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-none focus:bg-white focus:px-3 focus:py-2">
         Saltar al contenido
       </a>
-      <header className="sticky top-0 z-30 border-b border-stone-200 bg-stone-50/95 backdrop-blur">
-        <div className="container-page flex h-16 items-center gap-4">
+      <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/90 backdrop-blur">
+        <div className="container-page flex h-20 items-center gap-4">
           <button type="button" className="btn-ghost -ml-2 px-2 lg:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Menú" aria-expanded={menuOpen}>
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <Logo name={storeName} />
-          <nav className="ml-6 hidden items-center gap-6 lg:flex" aria-label="Principal">
+          <nav className="ml-10 hidden items-center gap-8 lg:flex" aria-label="Principal">
             <NavLink to="/catalogo" className={navCls}>
               Catálogo
             </NavLink>
@@ -76,15 +76,15 @@ export function Layout() {
               Buscar productos
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
-              <input id="header-search" className="input pl-9" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} />
+              <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+              <input id="header-search" className="input pl-7" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
           </form>
           <div className="ml-auto flex items-center gap-1 md:ml-2">
             {user && <NotificationsBell />}
             <Link to="/carrito" className="btn-ghost relative px-2" aria-label={`Carrito (${cartCount} productos)`}>
               <ShoppingBag className="h-5 w-5" aria-hidden />
-              {cartCount > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-bold text-white">{cartCount}</span>}
+              {cartCount > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-medium text-white">{cartCount}</span>}
             </Link>
             {user ? (
               <div className="hidden items-center gap-1 sm:flex">
@@ -112,36 +112,36 @@ export function Layout() {
           </div>
         </div>
         {menuOpen && (
-          <div className="border-t border-stone-200 bg-stone-50 lg:hidden">
+          <div className="border-t border-stone-200 bg-white lg:hidden">
             <div className="container-page flex flex-col gap-1 py-3">
               <form onSubmit={onSearch} className="mb-2 md:hidden" role="search">
                 <input className="input" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar productos" />
               </form>
-              <Link to="/catalogo" className="rounded px-2 py-2 hover:bg-stone-100">
+              <Link to="/catalogo" className="rounded-none px-2 py-2 hover:bg-stone-100">
                 Catálogo
               </Link>
-              <Link to="/como-comprar" className="rounded px-2 py-2 hover:bg-stone-100">
+              <Link to="/como-comprar" className="rounded-none px-2 py-2 hover:bg-stone-100">
                 Cómo comprar
               </Link>
-              <Link to="/politicas" className="rounded px-2 py-2 hover:bg-stone-100">
+              <Link to="/politicas" className="rounded-none px-2 py-2 hover:bg-stone-100">
                 Políticas
               </Link>
               {staffLink && (
-                <Link to={staffLink.to} className="rounded px-2 py-2 hover:bg-stone-100">
+                <Link to={staffLink.to} className="rounded-none px-2 py-2 hover:bg-stone-100">
                   {staffLink.label}
                 </Link>
               )}
               {user?.customerId && (
-                <Link to="/cuenta" className="rounded px-2 py-2 hover:bg-stone-100">
+                <Link to="/cuenta" className="rounded-none px-2 py-2 hover:bg-stone-100">
                   Mi cuenta
                 </Link>
               )}
               {user ? (
-                <button type="button" className="rounded px-2 py-2 text-left hover:bg-stone-100" onClick={() => logout().then(() => navigate('/'))}>
+                <button type="button" className="rounded-none px-2 py-2 text-left hover:bg-stone-100" onClick={() => logout().then(() => navigate('/'))}>
                   Cerrar sesión
                 </button>
               ) : (
-                <Link to="/ingresar" className="rounded px-2 py-2 font-medium hover:bg-stone-100">
+                <Link to="/ingresar" className="rounded-none px-2 py-2 font-medium hover:bg-stone-100">
                   Ingresar / Crear cuenta
                 </Link>
               )}
@@ -162,14 +162,14 @@ function Footer({ storeName }: { storeName: string }) {
   const { data } = useSettings();
   const store = data?.store;
   return (
-    <footer className="mt-16 border-t border-stone-200 bg-ink text-stone-200">
-      <div className="container-page grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-24 border-t border-stone-200 bg-white text-ink-soft">
+      <div className="container-page grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-display text-xl text-white">{storeName}</p>
-          {store?.tagline && <p className="mt-2 text-sm text-stone-400">{store.tagline}</p>}
+          <p className="font-display text-2xl font-light text-ink">{storeName}</p>
+          {store?.tagline && <p className="mt-2 text-sm text-ink-muted">{store.tagline}</p>}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Sede</p>
+          <p className="eyebrow">Sede</p>
           {store?.address ? (
             <address className="mt-3 space-y-1 text-sm not-italic">
               <p className="flex gap-2">
@@ -184,51 +184,51 @@ function Footer({ storeName }: { storeName: string }) {
               {store.email && <p>{store.email}</p>}
             </address>
           ) : (
-            <p className="mt-3 text-sm text-stone-400">Información de la sede pendiente de publicación.</p>
+            <p className="mt-3 text-sm text-ink-muted">Información de la sede pendiente de publicación.</p>
           )}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Comprar</p>
+          <p className="eyebrow">Comprar</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <Link to="/catalogo" className="hover:text-white">
+              <Link to="/catalogo" className="hover:text-ink">
                 Catálogo
               </Link>
             </li>
             <li>
-              <Link to="/como-comprar" className="hover:text-white">
+              <Link to="/como-comprar" className="hover:text-ink">
                 Prepago y retiro en sede
               </Link>
             </li>
             <li>
-              <Link to="/cuenta" className="hover:text-white">
+              <Link to="/cuenta" className="hover:text-ink">
                 Consultar mis operaciones
               </Link>
             </li>
           </ul>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Políticas</p>
+          <p className="eyebrow">Políticas</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <Link to="/politicas#condiciones" className="hover:text-white">
+              <Link to="/politicas#condiciones" className="hover:text-ink">
                 Condiciones comerciales
               </Link>
             </li>
             <li>
-              <Link to="/politicas#cancelaciones" className="hover:text-white">
+              <Link to="/politicas#cancelaciones" className="hover:text-ink">
                 Cancelaciones y cambios de fecha
               </Link>
             </li>
             <li>
-              <Link to="/politicas#privacidad" className="hover:text-white">
+              <Link to="/politicas#privacidad" className="hover:text-ink">
                 Privacidad
               </Link>
             </li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 py-4 text-center text-xs text-stone-500">
+      <div className="border-t border-stone-200 py-6 text-center text-[11px] tracking-wide text-ink-muted">
         © {new Date().getFullYear()} {storeName}. Precios en USD; montos en bolívares referenciales según la tasa BCV registrada.
       </div>
     </footer>

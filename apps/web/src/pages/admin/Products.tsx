@@ -63,7 +63,7 @@ export function AdminProducts() {
                 <tr key={p.id} className="hover:bg-stone-50">
                   <td>
                     <Link to={`/admin/productos/${p.id}`} className="flex items-center gap-3">
-                      <ProductImage product={p} className="h-10 w-10 shrink-0 rounded" />
+                      <ProductImage product={p} className="h-10 w-10 shrink-0 rounded-none" />
                       <span>
                         <span className="font-medium hover:underline">{p.name}</span>
                         <span className="block text-xs text-ink-muted">
@@ -363,8 +363,8 @@ function ImagesPanel({ product }: { product: Product }) {
       <div className="mt-3 grid grid-cols-3 gap-2">
         {product.images.map((img) => (
           <div key={img.id} className="group relative">
-            <img src={img.url} alt={img.alt} className="aspect-square w-full rounded object-cover" />
-            <button type="button" className="absolute right-1 top-1 rounded bg-white/90 p-1 text-red-700 opacity-0 transition group-hover:opacity-100 focus:opacity-100" onClick={() => remove.mutate(img.id)} aria-label="Eliminar imagen">
+            <img src={img.url} alt={img.alt} className="aspect-square w-full rounded-none object-cover" />
+            <button type="button" className="absolute right-1 top-1 rounded-none bg-white/90 p-1 text-red-700 opacity-0 transition group-hover:opacity-100 focus:opacity-100" onClick={() => remove.mutate(img.id)} aria-label="Eliminar imagen">
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
@@ -417,15 +417,15 @@ function InventoryPanel({ product }: { product: Product }) {
     <section className="card p-5">
       <h2 className="text-lg">Inventario</h2>
       <dl className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
-        <div className="rounded bg-stone-50 p-2">
+        <div className="rounded-none bg-stone-50 p-2">
           <dt className="text-xs text-ink-muted">Existencia</dt>
           <dd className="font-semibold">{product.onHandBoxes}</dd>
         </div>
-        <div className="rounded bg-stone-50 p-2">
+        <div className="rounded-none bg-stone-50 p-2">
           <dt className="text-xs text-ink-muted">Reservado</dt>
           <dd className="font-semibold">{product.reservedBoxes}</dd>
         </div>
-        <div className="rounded bg-stone-50 p-2">
+        <div className="rounded-none bg-stone-50 p-2">
           <dt className="text-xs text-ink-muted">Disponible</dt>
           <dd className="font-semibold">{product.availableBoxes}</dd>
         </div>
@@ -455,7 +455,7 @@ function InventoryPanel({ product }: { product: Product }) {
       </form>
       <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto text-xs">
         {movements.data?.map((m) => (
-          <li key={m.id} className="rounded bg-stone-50 p-2">
+          <li key={m.id} className="rounded-none bg-stone-50 p-2">
             <p className="font-medium">
               {INVENTORY_MOVEMENT_LABELS[m.type]} · existencia {m.deltaOnHand >= 0 ? '+' : ''}
               {m.deltaOnHand} · reservado {m.deltaReserved >= 0 ? '+' : ''}

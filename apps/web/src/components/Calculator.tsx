@@ -44,21 +44,21 @@ export function Calculator({ product }: { product: Product }) {
   };
 
   return (
-    <section className="card p-5" aria-labelledby="calc-title">
+    <section className="card p-6 sm:p-8" aria-labelledby="calc-title">
       <div className="flex items-center gap-2">
-        <CalcIcon className="h-5 w-5 text-brass" aria-hidden />
-        <h2 id="calc-title" className="text-lg">
+        <CalcIcon className="h-4 w-4 text-ink-muted" aria-hidden />
+        <h2 id="calc-title" className="text-2xl">
           Calcula tu compra
         </h2>
       </div>
-      <div className="mt-4 inline-flex rounded-md border border-stone-300 p-0.5" role="radiogroup" aria-label="Unidad de compra">
+      <div className="mt-5 inline-flex border border-stone-300" role="radiogroup" aria-label="Unidad de compra">
         {(['M2', 'BOXES'] as const).map((m) => (
           <button
             key={m}
             type="button"
             role="radio"
             aria-checked={mode === m}
-            className={`rounded px-4 py-1.5 text-sm font-medium ${mode === m ? 'bg-ink text-white' : 'text-ink-soft hover:bg-stone-100'}`}
+            className={`px-4 py-2 text-[11px] uppercase tracking-[0.14em] ${mode === m ? 'bg-ink text-white' : 'text-ink-soft hover:bg-stone-100'}`}
             onClick={() => {
               setMode(m);
               setQuantity('');
@@ -91,7 +91,7 @@ export function Calculator({ product }: { product: Product }) {
       </div>
 
       {line && (
-        <dl className="mt-4 divide-y divide-stone-100 rounded-md bg-stone-50 px-4 text-sm">
+        <dl className="mt-5 divide-y divide-stone-200 border-y border-stone-200 text-sm">
           <Row label="Cantidad solicitada" value={mode === 'M2' ? formatM2(line.requestedAreaUnits!) : `${line.requestedBoxes} cajas`} />
           <Row label="Cajas necesarias" value={<strong>{line.boxes}</strong>} />
           <Row label="Metros cuadrados efectivos" value={formatM2(line.areaUnits)} />

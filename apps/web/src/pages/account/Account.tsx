@@ -82,7 +82,7 @@ export function AccountHome() {
               {sellers.map((s) => (
                 <li key={s.id} className="flex items-center justify-between">
                   <span>{s.displayName}</span>
-                  <Link to="/cuenta/chat" className="text-brass hover:underline">
+                  <Link to="/cuenta/chat" className="text-ink underline-offset-4 hover:underline">
                     Escribir
                   </Link>
                 </li>
