@@ -158,6 +158,7 @@ export function AccountOrderDetail() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [skipProof, setSkipProof] = useState(false);
+  const { data: settings } = useSettings();
   const q = useQuery({ queryKey: ['order', code], queryFn: () => api<Order>(`/api/orders/${encodeURIComponent(code)}`), retry: (n, e) => !(e instanceof ApiError && e.status === 404) && n < 2 });
   if (q.isLoading) return <Spinner />;
   if (q.error instanceof ApiError && q.error.status === 404) return <NotFoundPage />;
@@ -218,7 +219,8 @@ export function AccountOrderDetail() {
       </div>
       {active && !showBanner && (
         <Alert kind="info" className="mt-6" title="Antes de acudir a la sede">
-          Contacta a tu vendedor {o.seller.displayName} con tu número de orden {o.code} para que esté preparado para recibirte.{' '}
+          Contacta a tu vendedor {o.seller.displayName} con tu número de orden {o.code} para que esté preparado para recibirte.
+          {settings?.store.hoursText && ` Horario de atención: ${settings.store.hoursText}.`}{' '}
           <WhatsAppButton variant="link" number={o.seller.whatsapp} message={visitMessage(o)} label="Escribir por WhatsApp" />
         </Alert>
       )}

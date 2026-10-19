@@ -75,3 +75,9 @@
 - Bug corregido al revisar las capturas: en móvil, las grillas de dos columnas se ensanchaban hasta el ancho mínimo de la tabla de productos y provocaban desplazamiento horizontal en el detalle de la orden. Se añadió `grid-cols-1` base a 55 grillas y una verificación en la prueba E2E.
 - Etiqueta "Número de operación" → "Número de orden" en el detalle del cliente.
 - Pruebas: shared 17/17, API 72/72, web 10/10, E2E 15/15.
+
+## 2026-10-19 — Horario de la sede
+- **Lunes a viernes de 8:00 a. m. a 5:00 p. m.**; sábado y domingo sin atención. El sábado 08:00–12:00 que venía por defecto era un valor provisional y se eliminó.
+- El calendario de retiro solo ofrece días hábiles (lunes a viernes, 08:00–17:00); el servidor rechaza sábado y domingo.
+- Texto visible “Lunes a viernes, de 8:00 a. m. a 5:00 p. m.” en el pie de página, inicio, contacto, cómo comprar, el cartel de orden registrada y el detalle de la orden del cliente. Se carga al iniciar sin pisar un horario ya editado por el administrador (Configuración → Sede y Horarios de retiro).
+- Pruebas: shared 18/18, API 73/73, web 10/10, E2E 15/15.

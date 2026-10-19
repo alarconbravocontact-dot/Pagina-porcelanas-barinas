@@ -2,6 +2,7 @@ import { CheckCircle2, Circle, CircleDot, MessageCircle, XCircle } from 'lucide-
 import { PAYMENT_REVIEW_STATE_LABELS, whatsappLink } from '@porcelanas/shared';
 import type { Order } from '../lib/types';
 import { formatDateLong } from '../lib/format';
+import { useSettings } from '../hooks/data';
 
 /** Mensaje prellenado para coordinar la visita con el vendedor, con el número de orden real. */
 export function visitMessage(order: Pick<Order, 'code' | 'seller'>) {
@@ -16,6 +17,8 @@ export function visitMessage(order: Pick<Order, 'code' | 'seller'>) {
  */
 export function OrderRegisteredBanner({ order, onViewOrder }: { order: Order; onViewOrder: () => void }) {
   const s = order.seller;
+  const { data: settings } = useSettings();
+  const hours = settings?.store.hoursText;
   const city = s.city || 'Barinas';
   const wa = whatsappLink(s.whatsapp, visitMessage(order));
   return (
@@ -62,6 +65,11 @@ export function OrderRegisteredBanner({ order, onViewOrder }: { order: Order; on
           )}
         </dl>
         <p className="text-base">Ten a mano tu número de orden cuando te comuniques con el vendedor.</p>
+        {hours && (
+          <p className="text-sm text-ink-soft">
+            Horario de atención de la sede: <strong className="font-normal text-ink">{hours}</strong>.
+          </p>
+        )}
         <div className="flex flex-col gap-3 pt-2 sm:flex-row">
           {wa && (
             <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-primary px-6 py-4 text-sm tracking-[0.08em]" data-testid="banner-whatsapp">

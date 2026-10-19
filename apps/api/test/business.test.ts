@@ -3,7 +3,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { addDays } from '@porcelanas/shared';
 import { checkout, Client, idem, login, PNG_1PX, prisma, scenario } from './helpers';
 import { config } from '../src/config';
-import { catalogSku, disableDemoData, ensurePaymentMethods, ensureSeller, importCatalog, JUAN } from '../src/seed/business';
+import { catalogSku, disableDemoData, ensurePaymentMethods, ensureSeller, ensureStoreDefaults, importCatalog, JUAN } from '../src/seed/business';
+import { invalidateSettings } from '../src/services/settings';
+import { checkDateRules } from '../src/services/pickup';
+import { SETTINGS_DEFAULTS } from '@porcelanas/shared';
 
 let s: Awaited<ReturnType<typeof scenario>>;
 const dataDir = path.resolve(import.meta.dirname, '../prisma/data');
@@ -175,4 +178,25 @@ describe('Vendedor Juan Alarcon, métodos de pago y catálogo de Barinas', () =>
     expect(r.products).toBe(1);
     expect((await prisma.product.findUniqueOrThrow({ where: { id: s.product.id } })).status).toBe('INACTIVE');
   });
+
+  it('registra el horario de lunes a viernes 8:00–17:00 sin pisar cambios del administrador', async () => {
+    await prisma.businessSetting.deleteMany({ where: { key: 'store' } });
+    await ensureStoreDefaults(prisma, '584125552594');
+    invalidateSettings();
+    const pub = (await new Client(s.app).get('/api/settings/public')).json();
+    expect(pub.store.hoursText).toBe('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.');
+    expect(pub.store.city).toBe('Barinas');
+    // Un horario editado en el panel se conserva.
+    await s.admin.put('/api/admin/settings/store', { ...pub.store, hoursText: 'Horario especial de diciembre' });
+    await ensureStoreDefaults(prisma, '584125552594');
+    invalidateSettings();
+    expect((await new Client(s.app).get('/api/settings/public')).json().store.hoursText).toBe('Horario especial de diciembre');
+    // Con el horario por defecto no se aceptan retiros en sábado ni domingo.
+    const now = new Date('2026-10-19T12:00:00Z'); // lunes
+    const rules = (d: string) => checkDateRules(d, 'PICKUP', { ...SETTINGS_DEFAULTS, pickup: { ...SETTINGS_DEFAULTS.pickup, minAdvanceHours: 0 } }, new Set(), now);
+    expect(rules('2026-10-23').ok).toBe(true); // viernes
+    expect(rules('2026-10-24')).toMatchObject({ ok: false, reason: 'La sede no atiende retiros ese día' }); // sábado
+    expect(rules('2026-10-25').ok).toBe(false); // domingo
+  });
 });
+

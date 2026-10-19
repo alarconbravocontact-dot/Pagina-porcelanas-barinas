@@ -34,7 +34,7 @@ Abra http://localhost:5173 e ingrese con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWO
 3. Cargar las **existencias** de los productos del catálogo (Productos → Inventario → Entrada de mercancía): el catálogo PDF no las incluye y se importan en 0.
 4. Revisar los 5 productos importados en **borrador** (80×160 y 90×180): el catálogo indica 1,44 m² por caja, lo que no coincide con el tamaño de la pieza.
 5. Generar el enlace de activación de Juan Alarcon (Vendedores → “Generar enlace de activación” o el comando anterior).
-6. Completar dirección, horario y políticas de la sede (Configuración).
+6. Completar dirección y políticas de la sede (Configuración). El horario ya viene cargado: lunes a viernes de 8:00 a 17:00.
 
 ### Compra sin cuenta (4 datos)
 El cliente compra sin correo ni contraseña: en el checkout ingresa **nombre completo, ubicación (ciudad y zona), teléfono y cédula**. El servidor crea su perfil y abre una sesión segura (cookie httpOnly) en ese dispositivo; en las siguientes compras sus datos se reutilizan y puede corregirlos. La cédula es única y **nunca** sirve para iniciar sesión. Para entrar desde otro dispositivo, el vendedor genera un enlace de acceso de un solo uso desde el detalle de la orden, o el cliente agrega correo y contraseña en su perfil.

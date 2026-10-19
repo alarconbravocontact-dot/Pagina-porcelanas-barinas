@@ -25,7 +25,11 @@ export function ContactPage() {
           <p className="mt-3 text-sm text-ink-soft">
             {[store?.address, store?.city].filter(Boolean).join(', ') || 'Dirección de la sede pendiente de publicación.'}
           </p>
-          {store?.hoursText && <p className="mt-1 text-sm text-ink-soft">{store.hoursText}</p>}
+          {store?.hoursText && (
+            <p className="mt-1 text-sm text-ink-soft">
+              Horario de atención: <span className="text-ink">{store.hoursText}</span>
+            </p>
+          )}
           {store?.mapUrl && (
             <a href={store.mapUrl} target="_blank" rel="noopener noreferrer" className="btn-outline mt-4">
               Cómo llegar

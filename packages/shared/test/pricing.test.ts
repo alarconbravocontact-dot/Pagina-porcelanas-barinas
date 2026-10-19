@@ -141,3 +141,13 @@ describe('datos del cliente', () => {
     expect(Object.keys(bad.error!.flatten().fieldErrors).sort()).toEqual(['addressRef', 'city', 'documentId', 'fullName', 'phone']);
   });
 });
+
+describe('horario de la sede', () => {
+  it('atiende de lunes a viernes de 8:00 a 17:00; sábado y domingo cerrado', async () => {
+    const { SETTINGS_DEFAULTS, STORE_HOURS_TEXT } = await import('../src/settings');
+    const w = SETTINGS_DEFAULTS.pickup.weekdays;
+    expect(w.map((d) => d.enabled)).toEqual([false, true, true, true, true, true, false]);
+    expect(w.slice(1, 6).every((d) => d.open === '08:00' && d.close === '17:00')).toBe(true);
+    expect(STORE_HOURS_TEXT).toBe('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.');
+  });
+});

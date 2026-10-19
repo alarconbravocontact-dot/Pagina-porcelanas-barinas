@@ -193,6 +193,7 @@ test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
     await expect(card.getByText('+58 412-5552594')).toBeVisible();
     await page.goto('/contacto');
     await expect(page.getByText('Sede Barinas, Venezuela')).toBeVisible();
+    await expect(page.getByText('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.').first()).toBeVisible();
   });
 
   test('las piezas del catálogo muestran precio en divisas, precio BCV y guía de uso', async ({ page }) => {

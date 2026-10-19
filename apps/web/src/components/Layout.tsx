@@ -195,7 +195,10 @@ function Footer({ storeName }: { storeName: string }) {
               {store.email && <p>{store.email}</p>}
             </address>
           ) : (
-            <p className="mt-3 text-sm text-ink-muted">Información de la sede pendiente de publicación.</p>
+            <div className="mt-3 space-y-1 text-sm">
+              {store?.city && <p>{store.city}</p>}
+              {store?.hoursText ? <p>{store.hoursText}</p> : <p className="text-ink-muted">Información de la sede pendiente de publicación.</p>}
+            </div>
           )}
         </div>
         <div>

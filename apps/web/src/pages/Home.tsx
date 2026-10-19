@@ -313,7 +313,7 @@ function FaqSection() {
 function StoreSection() {
   const { data } = useSettings();
   const s = data?.store;
-  if (!s?.address) return null;
+  if (!s?.address && !s?.hoursText) return null;
   return (
     <section className="container-page pb-8" aria-labelledby="sede">
       <div className="grid grid-cols-1 gap-10 border border-stone-200 p-10 md:grid-cols-2">
@@ -323,10 +323,13 @@ function StoreSection() {
           </h2>
           <p className="mt-3 flex gap-2 text-ink-soft">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
-            {s.address}
-            {s.city && `, ${s.city}`}
+            {[s.address, s.city].filter(Boolean).join(', ')}
           </p>
-          {s.hoursText && <p className="mt-2 text-sm text-ink-muted">{s.hoursText}</p>}
+          {s.hoursText && (
+            <p className="mt-2 text-sm text-ink-soft">
+              Horario de atención: <strong className="font-normal text-ink">{s.hoursText}</strong>
+            </p>
+          )}
           {s.phone && <p className="mt-1 text-sm text-ink-muted">Teléfono: {s.phone}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             {s.mapUrl && (

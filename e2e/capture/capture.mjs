@@ -46,7 +46,8 @@ await shot(admin, 'login', 'Iniciar sesión', 'Acceso');
 await login(admin, 'admin@porcelanas.local', 'AdminCaptura2026');
 await api(adminCtx, 'POST', '/api/admin/rates', { rate: '36,5432', effectiveDate: today, sourceNote: 'Tasa de ejemplo para las capturas (no oficial)' });
 const s = await api(adminCtx, 'GET', '/api/admin/settings');
-await api(adminCtx, 'PUT', '/api/admin/settings/pickup', { ...s.pickup, weekdays: s.pickup.weekdays.map((d) => ({ ...d, enabled: true })), minAdvanceHours: 0 });
+// Se respeta el horario real (lunes a viernes); solo se quita la anticipación mínima para tener fechas cercanas.
+await api(adminCtx, 'PUT', '/api/admin/settings/pickup', { ...s.pickup, minAdvanceHours: 0 });
 await api(adminCtx, 'PUT', '/api/admin/settings/store', { ...s.store, name: 'Porcelanatos Barinas', tagline: '' });
 const methods = await api(adminCtx, 'GET', '/api/admin/payment-methods');
 for (const m of methods.filter((x) => x.kind === 'ZELLE' || x.kind === 'PAGO_MOVIL')) {

@@ -96,7 +96,8 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
   },
   whatsapp: { number: '', greeting: 'Hola, quisiera información sobre sus porcelanatos.' },
   pickup: {
-    weekdays: [closedDay, openDay, openDay, openDay, openDay, openDay, { enabled: true, open: '08:00', close: '12:00' }],
+    // Horario de la sede: lunes a viernes de 8:00 a 17:00; sábado y domingo sin atención.
+    weekdays: [closedDay, openDay, openDay, openDay, openDay, openDay, closedDay],
     capacityPerDay: 20,
     minAdvanceHours: 24,
     maxDaysAheadPickup: 15,
@@ -118,6 +119,9 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
 };
 
 /** Claves visibles públicamente (sin datos internos). */
+/** Horario de atención de la sede de Barinas (texto visible). */
+export const STORE_HOURS_TEXT = 'Lunes a viernes, de 8:00 a. m. a 5:00 p. m.';
+
 export const PUBLIC_SETTINGS_KEYS: SettingsKey[] = [
   'store',
   'whatsapp',
