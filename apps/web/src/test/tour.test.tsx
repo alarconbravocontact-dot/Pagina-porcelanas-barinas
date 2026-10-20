@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { GuidedTour, resolveSteps } from '../components/GuidedTour';
 import { TOURS, tourFor, type Tour } from '../lib/tours';
 
+vi.mock('../hooks/session', () => ({ useSession: () => ({ user: null }) }));
+
 // jsdom no calcula diseño: cualquier elemento con contenido cuenta como visible.
 beforeEach(() => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {

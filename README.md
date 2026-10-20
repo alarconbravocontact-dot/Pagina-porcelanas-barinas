@@ -59,6 +59,12 @@ npm run build && npm run test:e2e   # Playwright: compra completa, revisión de 
 ```
 Capturas de todas las pantallas: `npm run build`, `bash e2e/capture/start-server.sh` (servidor en :4200 con base nueva y datos del negocio) y `npm run capture -- <carpeta>`. Con esos datos cargados, `npm run capture:tours -- <carpeta>` captura cada paso del recorrido guiado.
 
+Portal de compra privado (activado por defecto; se cambia en Configuración → Portal privado):
+1. El vendedor entra a **Invitar clientes** (`/vendedor/invitaciones`; la administración en `/admin/invitaciones`), escribe el nombre y el teléfono del cliente y genera su **enlace personal** (un solo uso, vence a los 7 días por defecto). El botón «Enviar por WhatsApp» abre el chat del cliente con el mensaje listo.
+2. El cliente abre el enlace, ve la bienvenida de su vendedor, registra sus cuatro datos una sola vez y entra a **su portal** (`/`): saludo, accesos rápidos, órdenes en curso con su progreso, su vendedor, «volver a comprar» y piezas destacadas. Queda con sesión en ese dispositivo (180 días).
+3. Sin sesión, cualquier página muestra el aviso «Este portal es personal» con un botón para pedir el enlace al vendedor por WhatsApp. Siguen abiertas `/ingresar` (personal y clientes con correo), `/acceso` (enlace para otro dispositivo), `/activar` y `/politicas`.
+- El candado está en la interfaz y en el registro (la API rechaza registros sin invitación con `INVITE_REQUIRED`). El catálogo y los precios siguen disponibles en la API pública de solo lectura (`/api/catalog`), igual que en el catálogo PDF; si se quiere ocultarlos también, hay que proteger esas rutas.
+
 Recorrido guiado: cada ventana tiene un tutorial animado (`apps/web/src/lib/tours.ts`, motor en `components/GuidedTour.tsx`). Se inicia solo la primera vez que alguien abre esa ventana y luego se abre con el botón «Recorrido» de la esquina inferior izquierda. Los pasos señalan zonas marcadas con `data-tour` (o un título con el prefijo `h:`), y los que no tienen contenido visible se omiten. Las pruebas automatizadas no reciben recorridos automáticos (`navigator.webdriver`).
 
 Variables opcionales para pruebas: `TEST_ADMIN_DATABASE_URL` y `E2E_ADMIN_DATABASE_URL` (por defecto `postgresql://porcelana:porcelana@localhost:5432/postgres`).
@@ -84,6 +90,7 @@ Ver [.env.example](.env.example). Ninguna contiene secretos por defecto.
 | `ANTHROPIC_API_KEY` | Clave de la API de Anthropic (opcional, se factura por uso) |
 | `ASSISTANT_MODEL`, `ASSISTANT_EFFORT` | Modelo (`claude-opus-5-5`) y esfuerzo (`low`) del asistente con Claude |
 | `ASSISTANT_RATE_LIMIT_PER_MIN` | Mensajes al asistente por minuto e IP (por defecto 15) |
+| `PORTAL_RATE_LIMIT_PER_MIN` | Aperturas de enlaces de invitación al portal por minuto e IP (por defecto 20) |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_DEMO_PASSWORD` | Solo para las semillas |
 
 ## Integraciones externas pendientes

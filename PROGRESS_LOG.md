@@ -97,3 +97,11 @@
 - Revisado con el catálogo real de Barinas (18 preguntas tipo) y corregido: doble punto en el horario, prioridad de «pagar después» y «cancelar mi pedido», búsquedas sin coincidencias que devolvían el catálogo completo, consulta de envíos.
 - **No verificado**: la integración con la API real de Claude (no hay clave en el entorno); está probada con un cliente simulado.
 - Pruebas: shared 18/18, API 81/81 (8 nuevas), web 15/15 (2 nuevas), E2E 19/19 (1 nueva).
+
+## 2026-10-20 — Portal de compra privado con enlace personal
+- **Acceso por enlace**: el vendedor (o la administración, a nombre de un vendedor) genera en «Invitar clientes» un enlace personal de un solo uso (7 días por defecto, configurable) y lo envía por WhatsApp con el mensaje listo; ve si cada enlace está pendiente, usado, vencido o anulado, y puede anularlo. Solo se guarda el hash del enlace.
+- **Bienvenida**: al abrirlo, el cliente ve quién lo invitó, registra sus cuatro datos una sola vez y queda con sesión en su dispositivo. El enlace se marca usado de forma condicional (dos aperturas simultáneas no crean dos cuentas) y se libera si el registro falla (p. ej., cédula ya registrada, que no abre el perfil ajeno).
+- **Portal personal** en `/`: saludo, accesos rápidos (catálogo, carrito, compras, mensajes), órdenes en curso con progreso, su vendedor (el de su última orden o el que lo invitó), «volver a comprar» y destacadas. Menú del cliente: Inicio, Catálogo, Mis compras, Mensajes.
+- **Privado**: sin sesión, todas las páginas muestran «Este portal es personal» con botón para pedir el enlace a Juan; la API rechaza registros sin invitación (`INVITE_REQUIRED`). Se puede volver al sitio público desde Configuración → Portal privado. El catálogo sigue en la API pública de solo lectura.
+- Recorridos guiados nuevos: «Mi portal» e «Invitaciones al portal». Capturas regeneradas con el flujo nuevo (49).
+- Pruebas: shared 18/18, API 87/87 (6 nuevas en `test/portal.test.ts`), web 15/15, E2E 20/20 (flujo de compra con enlace personal, invitaciones de Juan y aviso privado en el teléfono). Las pruebas E2E comparten una sesión de administración para no chocar con el límite de intentos de inicio de sesión.

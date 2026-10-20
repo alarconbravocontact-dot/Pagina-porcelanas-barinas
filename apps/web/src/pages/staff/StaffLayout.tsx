@@ -1,5 +1,5 @@
 import { NavLink, Navigate, Outlet } from 'react-router-dom';
-import { BarChart3, CalendarDays, ClipboardList, CreditCard, FileClock, Landmark, MessageSquare, Package, Settings, ShieldCheck, Users, Wallet } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, CreditCard, FileClock, Landmark, MessageSquare, Package, Settings, ShieldCheck, UserPlus, Users, Wallet } from 'lucide-react';
 import { useSession } from '../../hooks/session';
 import { Spinner } from '../../components/ui';
 
@@ -19,6 +19,7 @@ export function StaffLayout({ area }: { area: 'seller' | 'admin' }) {
           { to: '/admin/retiros', label: 'Retiros', Icon: CalendarDays },
           { to: '/admin/productos', label: 'Productos e inventario', Icon: Package },
           { to: '/admin/vendedores', label: 'Vendedores', Icon: Users },
+          { to: '/admin/invitaciones', label: 'Invitaciones al portal', Icon: UserPlus },
           { to: '/admin/usuarios', label: 'Usuarios y roles', Icon: ShieldCheck },
           { to: '/admin/tasa', label: 'Tasa BCV', Icon: Landmark },
           { to: '/admin/metodos-pago', label: 'Métodos de pago', Icon: Wallet },
@@ -30,6 +31,7 @@ export function StaffLayout({ area }: { area: 'seller' | 'admin' }) {
           { to: '/vendedor', label: 'Mis operaciones', Icon: ClipboardList, end: true },
           ...(can('payments:review') ? [{ to: '/vendedor/pagos', label: 'Comprobantes', Icon: CreditCard }] : []),
           { to: '/vendedor/retiros', label: 'Retiros', Icon: CalendarDays },
+          { to: '/vendedor/invitaciones', label: 'Invitar clientes', Icon: UserPlus },
           { to: '/vendedor/chat', label: 'Atención (chat)', Icon: MessageSquare },
         ];
   return (

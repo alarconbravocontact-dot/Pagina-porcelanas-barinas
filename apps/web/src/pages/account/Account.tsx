@@ -110,7 +110,7 @@ export function AccountHome() {
   );
 }
 
-function OrderCard({ order }: { order: Order }) {
+export function OrderCard({ order }: { order: Order }) {
   return (
     <Link to={`/cuenta/operaciones/${order.code}`} className="card block p-4 transition hover:border-ink">
       <div className="flex flex-wrap items-center justify-between gap-2">

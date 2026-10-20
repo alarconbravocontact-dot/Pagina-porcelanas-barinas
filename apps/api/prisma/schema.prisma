@@ -226,6 +226,7 @@ model CustomerProfile {
 
   orders        Order[]
   conversations Conversation[]
+  invites       PortalInvite[]
 }
 
 model Seller {
@@ -251,6 +252,7 @@ model Seller {
 
   orders        Order[]
   conversations Conversation[]
+  invites       PortalInvite[]
 
   @@index([active])
 }
@@ -743,4 +745,25 @@ model BusinessSetting {
   value       Json
   updatedById String?  @db.Uuid
   updatedAt   DateTime @updatedAt
+}
+
+/// Enlace personal de un solo uso para entrar al portal de compra privado.
+model PortalInvite {
+  id           String           @id @default(uuid()) @db.Uuid
+  tokenHash    String           @unique
+  sellerId     String           @db.Uuid
+  seller       Seller           @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  /// Nombre y teléfono con los que el vendedor identifica al invitado (solo referencia interna).
+  name         String           @default("")
+  phone        String           @default("")
+  expiresAt    DateTime
+  usedAt       DateTime?
+  customerId   String?          @db.Uuid
+  customer     CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  revokedAt    DateTime?
+  createdById  String           @db.Uuid
+  createdAt    DateTime         @default(now())
+
+  @@index([sellerId, createdAt])
+  @@index([customerId])
 }

@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { enterPortal } from './portal-helpers';
 
 test.describe('recorrido guiado por ventana', () => {
-  test('se abre desde el botón, resalta cada zona y se cierra', async ({ page }) => {
+  test('se abre desde el botón, resalta cada zona y se cierra', async ({ page, request }) => {
+    await enterPortal(page, request, 'Tomás Guía');
     await page.goto('/como-comprar');
     await page.waitForLoadState('networkidle');
     await page.getByTestId('tour-launcher').click();
@@ -18,11 +20,12 @@ test.describe('recorrido guiado por ventana', () => {
     await expect(page.getByTestId('tour-launcher')).toBeVisible();
   });
 
-  test('la primera visita lo inicia solo y “No mostrar automáticamente” lo desactiva', async ({ browser }) => {
+  test('la primera visita lo inicia solo y “No mostrar automáticamente” lo desactiva', async ({ browser, request }) => {
     const ctx = await browser.newContext();
     // Simula un navegador normal: las pruebas automatizadas no reciben recorridos automáticos.
     await ctx.addInitScript(() => Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false }));
     const page = await ctx.newPage();
+    await enterPortal(page, request, 'Tomás Guía');
     await page.goto('http://127.0.0.1:4100/catalogo');
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('Catálogo · 1 de');

@@ -12,6 +12,7 @@ import { AppError, errorHandler } from './lib/errors';
 import { storage } from './lib/storage';
 import { adminRoutes } from './routes/admin';
 import { assistantRoutes } from './routes/assistant';
+import { portalRoutes } from './routes/portal';
 import { authRoutes } from './routes/auth';
 import { cartRoutes } from './routes/cart';
 import { customerRoutes } from './routes/customers';
@@ -87,6 +88,7 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
   await app.register(staffRoutes);
   await app.register(adminRoutes);
   await app.register(assistantRoutes);
+  await app.register(portalRoutes);
 
   // En producción el mismo servidor entrega el frontend compilado (SPA).
   const webDist = config.WEB_DIST_DIR ? path.resolve(config.WEB_DIST_DIR) : path.resolve(process.cwd(), '../web/dist');

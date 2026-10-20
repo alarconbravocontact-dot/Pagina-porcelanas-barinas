@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { enterPortal, newInvitePath, randomDocument } from './portal-helpers';
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date());
@@ -36,7 +37,27 @@ test.describe.serial('flujo completo de compra', () => {
     await expect(page.getByText('Configuración guardada.')).toBeVisible();
   });
 
-  test('el cliente registra 4 datos, genera la orden con Juan y ve el cartel de confirmación', async ({ page }) => {
+  test('el cliente entra con su enlace personal, registra 4 datos, genera la orden con Juan y ve el cartel', async ({ page, request }) => {
+    // Portal privado: sin enlace no se ve el catálogo.
+    await page.goto('/catalogo');
+    await expect(page.getByRole('heading', { name: 'Este portal es personal' })).toBeVisible();
+    await expect(page.getByTestId('request-link')).toHaveAttribute('href', /^https:\/\/wa\.me\/584125552594\?text=/);
+    // Enlace personal: bienvenida y solo los cuatro datos, sin correo ni contraseña.
+    await page.goto(await newInvitePath(request, 'María José Pérez'));
+    await expect(page.getByRole('heading', { name: '¡Bienvenido, María!' })).toBeVisible();
+    await expect(page.getByText('Invitación de Juan Alarcon')).toBeVisible();
+    const form = page.getByRole('form', { name: 'Tus datos' });
+    await expect(form.getByLabel(/correo/i)).toHaveCount(0);
+    await form.getByRole('button', { name: 'Entrar a mi portal' }).click();
+    await expect(page.getByText('Escriba su nombre y apellido')).toBeVisible();
+    await form.getByLabel('Nombre completo').fill('María José Pérez');
+    await form.getByLabel('Ciudad').fill('Barinas');
+    await form.getByLabel('Zona o dirección de referencia').fill('Urb. Alto Barinas, calle 3');
+    await form.getByLabel('Teléfono').fill('0414 5551234');
+    await form.getByLabel('Cédula de identidad').fill(randomDocument());
+    await form.getByRole('button', { name: 'Entrar a mi portal' }).click();
+    await expect(page.getByRole('heading', { name: 'Hola, María.' })).toBeVisible();
+    await expect(page.getByText('No tienes órdenes en curso')).toBeVisible();
     await page.goto('/catalogo?q=calacatta');
     await page.getByRole('link', { name: /Calacatta Blanco/ }).first().click();
     await page.getByLabel('Superficie a cubrir (m²)').fill('30');
@@ -48,17 +69,7 @@ test.describe.serial('flujo completo de compra', () => {
     await page.goto('/carrito');
     await page.getByRole('link', { name: 'Continuar con la compra' }).click();
     await expect(page).toHaveURL(/\/checkout/);
-    // Primer ingreso: solo los cuatro datos, sin correo ni contraseña.
-    const form = page.getByRole('form', { name: 'Tus datos' });
-    await expect(form.getByLabel(/correo/i)).toHaveCount(0);
-    await form.getByRole('button', { name: 'Continuar' }).click();
-    await expect(page.getByText('Escriba su nombre y apellido')).toBeVisible();
-    await form.getByLabel('Nombre completo').fill('María José Pérez');
-    await form.getByLabel('Ciudad').fill('Barinas');
-    await form.getByLabel('Zona o dirección de referencia').fill('Urb. Alto Barinas, calle 3');
-    await form.getByLabel('Teléfono').fill('0414 5551234');
-    await form.getByLabel('Cédula de identidad').fill(`V-${20000000 + Math.floor(Math.random() * 9000000)}`);
-    await form.getByRole('button', { name: 'Continuar' }).click();
+    // Los datos ya se registraron al entrar al portal.
     await expect(page.getByRole('button', { name: 'Corregir datos' })).toBeVisible();
     await expect(page.getByText(/V-\*{4}\d{4}/)).toBeVisible();
     // Sin vendedor no se puede generar la orden.
@@ -164,11 +175,21 @@ test.describe.serial('flujo completo de compra', () => {
     await juan.getByRole('button', { name: 'Marcar lista para retiro' }).click();
     await expect(juan.getByText('Listo para retirar').first()).toBeVisible();
     await expect(juan.getByText('Orden de compra registrada').first()).toBeVisible();
+    // Invitaciones: la de María aparece usada y Juan genera un enlace nuevo para otro cliente.
+    await juan.goto('/vendedor/invitaciones');
+    await expect(juan.locator('tr', { hasText: 'María José Pérez' }).first()).toContainText('Usada');
+    await juan.getByLabel('Nombre del cliente (opcional)').fill('Pedro Rivas');
+    await juan.getByLabel('Teléfono del cliente (opcional)').fill('0412 1112233');
+    await juan.getByRole('button', { name: 'Generar enlace personal' }).click();
+    await expect(juan.getByTestId('invite-url')).toContainText('/portal?invitacion=');
+    await expect(juan.getByRole('link', { name: /Enviar por WhatsApp/ })).toHaveAttribute('href', /^https:\/\/wa\.me\/584121112233\?text=/);
+    await expect(juan.locator('tr', { hasText: 'Pedro Rivas' })).toContainText('Pendiente');
     await ctx.close();
   });
 });
 
-test('recuperación ante errores de la API', async ({ page }) => {
+test('recuperación ante errores de la API', async ({ page, request }) => {
+  await enterPortal(page, request, 'Ana Torres');
   let fail = true;
   await page.route('**/api/catalog?*', (route) => (fail ? route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"code":"INTERNAL","message":"Fallo simulado"}}' }) : route.continue()));
   await page.goto('/catalogo');
@@ -178,14 +199,15 @@ test('recuperación ante errores de la API', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Calacatta Blanco/ }).first()).toBeVisible();
 });
 
-test('una ruta inexistente muestra la página 404', async ({ page }) => {
+test('una ruta inexistente muestra la página 404', async ({ page, request }) => {
+  await enterPortal(page, request, 'Pablo Ruiz');
   await page.goto('/no-existe');
   await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toBeVisible();
 });
 
 test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
-  test('aparece con sus datos y WhatsApp en el inicio, contacto y checkout', async ({ page }) => {
-    await page.goto('/');
+  test('aparece con sus datos y WhatsApp en el portal del cliente y en contacto', async ({ page, request }) => {
+    await enterPortal(page, request, 'Luis Mendoza');
     const card = page.locator('div', { has: page.getByText('Juan Alarcon', { exact: true }) }).filter({ hasText: 'alarconbravocontact@gmail.com' }).last();
     await expect(card).toBeVisible();
     await expect(card.getByRole('link', { name: 'alarconbravocontact@gmail.com' })).toHaveAttribute('href', 'mailto:alarconbravocontact@gmail.com');
@@ -196,7 +218,8 @@ test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
     await expect(page.getByText('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.').first()).toBeVisible();
   });
 
-  test('las piezas del catálogo muestran precio en divisas, precio BCV y guía de uso', async ({ page }) => {
+  test('las piezas del catálogo muestran precio en divisas, precio BCV y guía de uso', async ({ page, request }) => {
+    await enterPortal(page, request, 'Rosa Díaz');
     await page.goto('/catalogo?use=ducha');
     await expect(page.getByText('3 productos')).toBeVisible();
     await page.goto('/producto/BRN-01-60X60');

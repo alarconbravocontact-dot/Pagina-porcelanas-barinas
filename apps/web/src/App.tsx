@@ -12,6 +12,9 @@ import { ContactPage } from './pages/Contact';
 import { ActivationPage } from './pages/Activation';
 import { AccessPage } from './pages/Access';
 import { NotFoundPage } from './pages/NotFound';
+import { PortalHome, PortalInvitePage } from './pages/Portal';
+import { StaffInvitations } from './pages/staff/Invitations';
+import { useSession } from './hooks/session';
 import { AccountChat, AccountHome, AccountLayout, AccountOrderDetail, AccountOrders, AccountProfile } from './pages/account/Account';
 import { StaffLayout } from './pages/staff/StaffLayout';
 import { StaffChat, StaffOrderDetail, StaffOrders, StaffPayments, StaffPickups } from './pages/staff/StaffPages';
@@ -24,7 +27,8 @@ export function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<HomeSwitch />} />
+        <Route path="portal" element={<PortalInvitePage />} />
         <Route path="catalogo" element={<CatalogPage />} />
         <Route path="producto/:sku" element={<ProductDetailPage />} />
         <Route path="carrito" element={<CartPage />} />
@@ -49,6 +53,7 @@ export function App() {
           <Route path="operaciones/:id" element={<StaffOrderDetail />} />
           <Route path="pagos" element={<StaffPayments />} />
           <Route path="retiros" element={<StaffPickups />} />
+          <Route path="invitaciones" element={<StaffInvitations />} />
           <Route path="chat" element={<StaffChat />} />
           <Route path="chat/:id" element={<StaffChat />} />
         </Route>
@@ -68,9 +73,16 @@ export function App() {
           <Route path="chat" element={<StaffChat />} />
           <Route path="chat/:id" element={<StaffChat />} />
           <Route path="auditoria" element={<AdminAudit />} />
+          <Route path="invitaciones" element={<StaffInvitations />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
+}
+
+/** El cliente con sesión ve su portal; el resto, la portada. */
+function HomeSwitch() {
+  const { user } = useSession();
+  return user?.customerId ? <PortalHome /> : <HomePage />;
 }

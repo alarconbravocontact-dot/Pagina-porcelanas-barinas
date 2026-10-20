@@ -17,17 +17,21 @@ export function CustomerProfileForm({
   onSaved,
   submitLabel = 'Guardar y continuar',
   onCancel,
+  submitTo,
 }: {
   initial?: Partial<CustomerProfile> | null;
   onSaved?: (p: CustomerProfile) => void;
   submitLabel?: string;
   onCancel?: () => void;
+  /** Ruta POST alternativa (p. ej. aceptar una invitación al portal). */
+  submitTo?: string;
 }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({ ...EMPTY, ...pick(initial) });
   const [fields, setFields] = useState<Record<string, string>>({});
   const save = useMutation({
-    mutationFn: (body: typeof form) => api<{ created: boolean; profile: CustomerProfile }>('/api/customers/profile', { method: 'PUT', body }),
+    mutationFn: (body: typeof form) =>
+      api<{ created: boolean; profile: CustomerProfile }>(submitTo ?? '/api/customers/profile', { method: submitTo ? 'POST' : 'PUT', body }),
     onSuccess: async (r) => {
       qc.setQueryData(['customer-profile'], r.profile);
       await qc.invalidateQueries({ queryKey: ['session'] });

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Compass, X } from 'lucide-react';
 import { tourFor, type Tour, type TourStep } from '../lib/tours';
+import { useSession } from '../hooks/session';
 
 const SEEN_PREFIX = 'porcelanas.tour.';
 const AUTO_OFF_KEY = 'porcelanas.tour.auto-off';
@@ -76,7 +77,8 @@ const sameBox = (a: Box | null, b: Box | null) => a === b || (!!a && !!b && a.to
 
 export function GuidedTour() {
   const { pathname } = useLocation();
-  const tour = tourFor(pathname);
+  const { user } = useSession();
+  const tour = tourFor(pathname, !!user?.customerId);
   const [steps, setSteps] = useState<TourStep[] | null>(null);
   const [index, setIndex] = useState(0);
   const [auto, setAuto] = useState(false);

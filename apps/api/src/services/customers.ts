@@ -4,8 +4,9 @@ import { customerProfileSchema, maskDocumentId, normalizeDocumentId, normalizePh
 import { prisma } from '../db';
 import { audit } from '../lib/audit';
 import { createSession } from '../lib/auth';
-import { conflict, forbidden, parse } from '../lib/errors';
+import { AppError, conflict, forbidden, parse } from '../lib/errors';
 import { mergeGuestCart } from './cart';
+import { getSettings } from './settings';
 
 export const DOCUMENT_TAKEN_MESSAGE =
   'Ya existe un cliente registrado con esta cédula. Por seguridad no podemos abrir ese perfil desde aquí: inicia sesión con tu cuenta o pide a tu vendedor un enlace de acceso.';
@@ -34,7 +35,7 @@ export function ownProfile(p: { fullName: string; phone: string; city: string; a
  * - Con sesión de cliente: actualiza su propio perfil.
  * La cédula es única: nunca se vincula ni se revela un perfil ajeno a partir de ella.
  */
-export async function upsertCustomerProfile(request: FastifyRequest, reply: FastifyReply, body: unknown) {
+export async function upsertCustomerProfile(request: FastifyRequest, reply: FastifyReply, body: unknown, opts: { viaInvite?: boolean } = {}) {
   const input = parse(customerProfileSchema, body);
   const data = {
     fullName: input.fullName.replace(/\s+/g, ' '),
@@ -45,6 +46,10 @@ export async function upsertCustomerProfile(request: FastifyRequest, reply: Fast
   };
   const auth = request.auth;
   if (auth && !auth.customerId) throw forbidden('Las cuentas de personal no tienen perfil de cliente');
+  // Portal privado: un visitante sin sesión solo puede registrarse con un enlace de invitación.
+  if (!auth && !opts.viaInvite && (await getSettings()).portal.inviteOnly) {
+    throw new AppError(403, 'INVITE_REQUIRED', 'El portal es privado: entra con el enlace personal que te envió tu vendedor.');
+  }
   const owner = await prisma.customerProfile.findUnique({ where: { documentId: data.documentId } });
   if (owner && owner.id !== auth?.customerId) throw conflict('DOCUMENT_REGISTERED', DOCUMENT_TAKEN_MESSAGE);
   try {

@@ -200,6 +200,8 @@ export async function scenario(opts: { stock?: number; rate?: string; capacity?:
     maxDaysAheadPickup: 15,
     maxDaysAheadPrepay: 90,
   });
+  // Las pruebas anteriores al portal privado registran clientes sin invitación.
+  await setSetting('portal', { inviteOnly: false });
   const customer = await login(app, 'cliente@test.local');
   return {
     app,

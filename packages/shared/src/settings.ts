@@ -63,6 +63,12 @@ export const settingsSchemas = {
     privacyText: z.string().trim().max(20_000),
     returnsText: z.string().trim().max(20_000),
   }),
+  portal: z.object({
+    /** Portal privado: solo se entra con un enlace personal de invitación (o una sesión ya abierta). */
+    inviteOnly: z.boolean(),
+    /** Días de validez de cada enlace de invitación (un solo uso). */
+    inviteValidDays: z.number().int().min(1).max(60),
+  }),
   faq: z.object({
     items: z
       .array(z.object({ q: z.string().trim().min(3).max(300), a: z.string().trim().min(3).max(3000) }))
@@ -115,6 +121,7 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
   rate: { autoFetch: false, sourceUrl: 'https://www.bcv.org.ve/', maxAgeHours: 72, blockWhenStale: true },
   uploads: { maxProofMB: 5 },
   policies: { termsText: '', privacyText: '', returnsText: '' },
+  portal: { inviteOnly: true, inviteValidDays: 7 },
   faq: { items: [] },
 };
 
@@ -132,4 +139,5 @@ export const PUBLIC_SETTINGS_KEYS: SettingsKey[] = [
   'uploads',
   'policies',
   'faq',
+  'portal',
 ];

@@ -16,6 +16,8 @@ export interface Tour {
   /** Nombre de la ventana, visible en la tarjeta. */
   window: string;
   match: RegExp;
+  /** Solo para clientes con sesión (`customer`) o para el resto de visitantes (`guest`). */
+  audience?: 'customer' | 'guest';
   steps: TourStep[];
   /** Mensaje cuando ningún paso tiene contenido visible (por ejemplo, sin datos aún). */
   empty?: string;
@@ -25,9 +27,24 @@ const STAFF_NAV = ['nav[aria-label="Vendedor"]', 'nav[aria-label="Administració
 
 export const TOURS: Tour[] = [
   {
+    id: 'portal',
+    window: 'Mi portal',
+    match: /^\/$/,
+    audience: 'customer',
+    steps: [
+      { title: 'Bienvenido a tu portal', body: 'Este es tu espacio personal de compra. Te muestro en pocos pasos dónde está cada cosa; sal cuando quieras con Esc.' },
+      { target: ['[data-tour="portal-tiles"]'], title: 'Accesos rápidos', body: 'Catálogo, tu carrito, tus compras y los mensajes con tu vendedor, siempre a un toque.' },
+      { target: ['[data-tour="portal-orders"]'], title: 'Órdenes en curso', body: 'Cada orden muestra su estado de pago y de entrega y en qué paso va. Toca una para adjuntar tu comprobante o ver el detalle.' },
+      { target: ['[data-tour="portal-seller"]'], title: 'Tu vendedor', body: 'Quien te atiende en la sede de Barinas. Escríbele por WhatsApp para coordinar tu visita.' },
+      { target: ['[data-tour="portal-reorder"]'], title: 'Volver a comprar', body: 'Las piezas que ya compraste, con el precio y la disponibilidad de hoy.' },
+      { target: ['[data-tour="assistant"]'], title: 'Asistente virtual', body: 'Pregúntale por piezas, cuántas cajas necesitas, el horario, los pagos o el estado de tu orden.' },
+    ],
+  },
+  {
     id: 'inicio',
     window: 'Inicio',
     match: /^\/$/,
+    audience: 'guest',
     steps: [
       { title: 'Bienvenido a la galería', body: 'Este recorrido te muestra en pocos pasos cómo está organizada la página de inicio. Puedes salir cuando quieras con Esc.' },
       { target: ['[data-tour="home-hero"]'], title: 'Portada', body: 'Desde aquí puedes buscar un porcelanato por nombre o SKU, o ir directo al catálogo.' },
@@ -192,6 +209,16 @@ export const TOURS: Tour[] = [
     ],
   },
   {
+    id: 'staff-invitaciones',
+    window: 'Invitaciones al portal',
+    match: /^\/(vendedor|admin)\/invitaciones$/,
+    steps: [
+      { target: ['[data-tour="invite-form"]'], title: 'Nuevo enlace', body: 'Escribe el nombre y el teléfono del cliente y genera su enlace personal. Es de un solo uso y vence a los días configurados.' },
+      { target: ['[data-tour="invite-created"]', '[data-tour="invite-form"]'], title: 'Envíalo por WhatsApp', body: 'El botón abre WhatsApp con el mensaje listo. Al abrirlo, el cliente registra sus datos una sola vez y entra a su portal.' },
+      { target: ['[data-tour="invite-list"]'], title: 'Seguimiento', body: 'Ve qué enlaces están pendientes, usados, vencidos o anulados. Puedes anular uno pendiente si lo enviaste por error.' },
+    ],
+  },
+  {
     id: 'staff-retiros',
     window: 'Calendario de retiros',
     match: /^\/(vendedor|admin)\/retiros$/,
@@ -273,7 +300,7 @@ export const TOURS: Tour[] = [
   },
 ];
 
-export function tourFor(pathname: string): Tour | undefined {
+export function tourFor(pathname: string, isCustomer = false): Tour | undefined {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  return TOURS.find((t) => t.match.test(path));
+  return TOURS.find((t) => t.match.test(path) && (!t.audience || t.audience === (isCustomer ? 'customer' : 'guest')));
 }

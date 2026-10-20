@@ -7,6 +7,8 @@ import { NotificationsBell } from './NotificationsBell';
 import { WhatsAppButton } from './WhatsAppButton';
 import { GuidedTour } from './GuidedTour';
 import { AssistantChat } from './AssistantChat';
+import { PORTAL_PUBLIC_PATHS, PrivatePortal } from '../pages/Portal';
+import { Spinner } from './ui';
 import { useEffect } from 'react';
 
 function Logo({ name }: { name: string }) {
@@ -29,8 +31,8 @@ function confirmLogout(hasCredentials: boolean) {
 }
 
 export function Layout() {
-  const { user, logout } = useSession();
-  const { data: settings } = useSettings();
+  const { user, logout, loading: sessionLoading } = useSession();
+  const { data: settings, isLoading: settingsLoading } = useSettings();
   const { data: cart } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -54,6 +56,25 @@ export function Layout() {
   };
 
   const navCls = ({ isActive }: { isActive: boolean }) => `text-[11px] uppercase tracking-gallery transition hover:text-ink ${isActive ? 'text-ink' : 'text-ink-muted'}`;
+  // Portal privado: sin sesión solo se ven las páginas de acceso; el resto muestra el aviso del portal.
+  const privatePortal = settings ? settings.portal?.inviteOnly !== false : true;
+  const isPublicPath = PORTAL_PUBLIC_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`));
+  const resolving = (sessionLoading || settingsLoading) && !isPublicPath;
+  const lockedOut = privatePortal && !user && !sessionLoading;
+  const gated = lockedOut && !isPublicPath;
+  const navLinks = user?.customerId
+    ? [
+        { to: '/', label: 'Inicio', end: true },
+        { to: '/catalogo', label: 'Catálogo' },
+        { to: '/cuenta/operaciones', label: 'Mis compras' },
+        { to: '/cuenta/chat', label: 'Mensajes' },
+      ]
+    : [
+        { to: '/catalogo', label: 'Catálogo' },
+        { to: '/como-comprar', label: 'Cómo comprar' },
+        { to: '/contacto', label: 'Contacto' },
+        { to: '/politicas', label: 'Políticas' },
+      ];
   const staffLink = user?.role === 'ADMIN' ? { to: '/admin', label: 'Administración' } : user?.role === 'SELLER' ? { to: '/vendedor', label: 'Panel de vendedor' } : null;
 
   return (
@@ -63,82 +84,86 @@ export function Layout() {
       </a>
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/90 backdrop-blur">
         <div className="container-page flex h-20 items-center gap-4">
-          <button type="button" className="btn-ghost -ml-2 px-2 lg:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Menú" aria-expanded={menuOpen}>
+          <button type="button" className={`btn-ghost -ml-2 px-2 lg:hidden ${lockedOut ? 'hidden' : ''}`} onClick={() => setMenuOpen((v) => !v)} aria-label="Menú" aria-expanded={menuOpen}>
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <Logo name={storeName} />
-          <nav className="ml-10 hidden items-center gap-8 lg:flex" aria-label="Principal">
-            <NavLink to="/catalogo" className={navCls}>
-              Catálogo
-            </NavLink>
-            <NavLink to="/como-comprar" className={navCls}>
-              Cómo comprar
-            </NavLink>
-            <NavLink to="/contacto" className={navCls}>
-              Contacto
-            </NavLink>
-            <NavLink to="/politicas" className={navCls}>
-              Políticas
-            </NavLink>
-          </nav>
-          <form onSubmit={onSearch} className="ml-auto hidden max-w-xs flex-1 md:block" role="search">
-            <label htmlFor="header-search" className="sr-only">
-              Buscar productos
-            </label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
-              <input id="header-search" className="input pl-7" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
-          </form>
-          <div className="ml-auto flex items-center gap-1 md:ml-2">
-            {user && <NotificationsBell />}
-            <Link to="/carrito" className="btn-ghost relative px-2" aria-label={`Carrito (${cartCount} productos)`}>
-              <ShoppingBag className="h-5 w-5" aria-hidden />
-              {cartCount > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-medium text-white">{cartCount}</span>}
+          {!lockedOut && (
+            <nav className="ml-10 hidden items-center gap-8 lg:flex" aria-label="Principal">
+              {navLinks.map((l) => (
+                <NavLink key={l.to} to={l.to} end={'end' in l} className={navCls}>
+                  {l.label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
+          {lockedOut ? (
+            <Link to="/ingresar" className="ml-auto text-[11px] uppercase tracking-gallery text-ink-muted hover:text-ink">
+              Acceso del personal
             </Link>
-            {user ? (
-              <div className="hidden items-center gap-1 sm:flex">
-                {staffLink && (
-                  <Link to={staffLink.to} className="btn-ghost px-2" title={staffLink.label}>
-                    <LayoutDashboard className="h-5 w-5" aria-hidden />
-                    <span className="hidden xl:inline">{staffLink.label}</span>
+          ) : (
+            <>
+              <form onSubmit={onSearch} className="ml-auto hidden max-w-xs flex-1 md:block" role="search">
+                <label htmlFor="header-search" className="sr-only">
+                  Buscar productos
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+                  <input id="header-search" className="input pl-7" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} />
+                </div>
+              </form>
+              <div className="ml-auto flex items-center gap-1 md:ml-2">
+                {user && <NotificationsBell />}
+                <Link to="/carrito" className="btn-ghost relative px-2" aria-label={`Carrito (${cartCount} productos)`}>
+                  <ShoppingBag className="h-5 w-5" aria-hidden />
+                  {cartCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-medium text-white">{cartCount}</span>
+                  )}
+                </Link>
+                {user ? (
+                  <div className="hidden items-center gap-1 sm:flex">
+                    {staffLink && (
+                      <Link to={staffLink.to} className="btn-ghost px-2" title={staffLink.label}>
+                        <LayoutDashboard className="h-5 w-5" aria-hidden />
+                        <span className="hidden xl:inline">{staffLink.label}</span>
+                      </Link>
+                    )}
+                    {user.customerId && (
+                      <Link to="/cuenta" className="btn-ghost px-2" title="Mi cuenta">
+                        <User className="h-5 w-5" aria-hidden />
+                        <span className="hidden xl:inline">Mi cuenta</span>
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-ghost px-2"
+                      onClick={() => confirmLogout(user.hasCredentials) && logout().then(() => navigate('/'))}
+                      title="Cerrar sesión"
+                      aria-label="Cerrar sesión"
+                    >
+                      <LogOut className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <Link to="/ingresar" className="btn-primary btn-sm ml-1 hidden sm:inline-flex">
+                    Ingresar
                   </Link>
                 )}
-                {user.customerId && (
-                  <Link to="/cuenta" className="btn-ghost px-2" title="Mi cuenta">
-                    <User className="h-5 w-5" aria-hidden />
-                    <span className="hidden xl:inline">Mi cuenta</span>
-                  </Link>
-                )}
-                <button type="button" className="btn-ghost px-2" onClick={() => confirmLogout(user.hasCredentials) && logout().then(() => navigate('/'))} title="Cerrar sesión" aria-label="Cerrar sesión">
-                  <LogOut className="h-5 w-5" aria-hidden />
-                </button>
               </div>
-            ) : (
-              <Link to="/ingresar" className="btn-primary btn-sm ml-1 hidden sm:inline-flex">
-                Ingresar
-              </Link>
-            )}
-          </div>
+            </>
+          )}
         </div>
-        {menuOpen && (
+        {menuOpen && !lockedOut && (
           <div className="border-t border-stone-200 bg-white lg:hidden">
             <div className="container-page flex flex-col gap-1 py-3">
               <form onSubmit={onSearch} className="mb-2 md:hidden" role="search">
                 <input className="input" placeholder="Buscar por nombre o SKU" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar productos" />
               </form>
-              <Link to="/catalogo" className="rounded-none px-2 py-2 hover:bg-stone-100">
-                Catálogo
-              </Link>
-              <Link to="/como-comprar" className="rounded-none px-2 py-2 hover:bg-stone-100">
-                Cómo comprar
-              </Link>
-              <Link to="/contacto" className="rounded-none px-2 py-2 hover:bg-stone-100">
-                Contacto
-              </Link>
-              <Link to="/politicas" className="rounded-none px-2 py-2 hover:bg-stone-100">
-                Políticas
-              </Link>
+              {navLinks.map((l) => (
+                <Link key={l.to} to={l.to} className="rounded-none px-2 py-2 hover:bg-stone-100">
+                  {l.label}
+                </Link>
+              ))}
               {staffLink && (
                 <Link to={staffLink.to} className="rounded-none px-2 py-2 hover:bg-stone-100">
                   {staffLink.label}
@@ -163,17 +188,17 @@ export function Layout() {
         )}
       </header>
       <main id="contenido" className="flex-1">
-        <Outlet />
+        {resolving ? <Spinner /> : gated ? <PrivatePortal /> : <Outlet />}
       </main>
-      <Footer storeName={storeName} />
+      <Footer storeName={storeName} minimal={lockedOut} />
       <WhatsAppButton variant="floating" />
-      <GuidedTour />
-      <AssistantChat />
+      {!lockedOut && <GuidedTour />}
+      {!lockedOut && <AssistantChat />}
     </div>
   );
 }
 
-function Footer({ storeName }: { storeName: string }) {
+function Footer({ storeName, minimal = false }: { storeName: string; minimal?: boolean }) {
   const { data } = useSettings();
   const store = data?.store;
   return (
@@ -205,31 +230,33 @@ function Footer({ storeName }: { storeName: string }) {
             </div>
           )}
         </div>
-        <div>
-          <p className="eyebrow">Comprar</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <Link to="/catalogo" className="hover:text-ink">
-                Catálogo
-              </Link>
-            </li>
-            <li>
-              <Link to="/como-comprar" className="hover:text-ink">
-                Prepago y retiro en sede
-              </Link>
-            </li>
-            <li>
-              <Link to="/cuenta" className="hover:text-ink">
-                Consultar mis operaciones
-              </Link>
-            </li>
-            <li>
-              <Link to="/contacto" className="hover:text-ink">
-                Contacto comercial
-              </Link>
-            </li>
-          </ul>
-        </div>
+        {!minimal && (
+          <div>
+            <p className="eyebrow">Comprar</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <Link to="/catalogo" className="hover:text-ink">
+                  Catálogo
+                </Link>
+              </li>
+              <li>
+                <Link to="/como-comprar" className="hover:text-ink">
+                  Prepago y retiro en sede
+                </Link>
+              </li>
+              <li>
+                <Link to="/cuenta" className="hover:text-ink">
+                  Consultar mis operaciones
+                </Link>
+              </li>
+              <li>
+                <Link to="/contacto" className="hover:text-ink">
+                  Contacto comercial
+                </Link>
+              </li>
+            </ul>
+          </div>
+        )}
         <div>
           <p className="eyebrow">Políticas</p>
           <ul className="mt-3 space-y-2 text-sm">

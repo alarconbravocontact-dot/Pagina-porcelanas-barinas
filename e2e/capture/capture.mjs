@@ -87,19 +87,41 @@ await juan.getByLabel('Repite la contraseña').fill('JuanBarinas2026');
 await juan.getByRole('button', { name: 'Activar y entrar' }).click();
 await juan.waitForURL(/\/vendedor$/);
 
-// ---------------- Sitio público ----------------
+// ---------------- Portal privado: el cliente entra con su enlace personal ----------------
 const custCtx = await browser.newContext(desktop);
 const c = await custCtx.newPage();
-await c.goto(BASE + '/');
-await shot(c, 'inicio', 'Inicio: portada, ambientes, destacados, calculadora, proceso, vendedor y preguntas frecuentes', 'Sitio público');
 await c.goto(BASE + '/catalogo');
-await shot(c, 'catalogo', 'Catálogo con filtros (ambiente, color, tamaño, acabado, uso recomendado, agarre, precio)', 'Sitio público');
+await c.getByTestId('private-portal').waitFor();
+await shot(c, 'portal-privado', 'Sin enlace: aviso de portal privado y botón para pedir el enlace a Juan', 'Portal privado', { full: false });
+await juan.goto(BASE + '/vendedor/invitaciones');
+await juan.getByLabel('Nombre del cliente (opcional)').fill('María José Pérez');
+await juan.getByLabel('Teléfono del cliente (opcional)').fill('0414 5551234');
+await juan.getByRole('button', { name: 'Generar enlace personal' }).click();
+await juan.getByTestId('invite-url').waitFor();
+await shot(juan, 'vendedor-invitaciones', 'Juan genera el enlace personal de la clienta y lo envía por WhatsApp', 'Portal privado');
+const inviteUrl = new URL(await juan.getByTestId('invite-url').innerText());
+await c.goto(BASE + inviteUrl.pathname + inviteUrl.search);
+await c.getByRole('form', { name: 'Tus datos' }).waitFor();
+await shot(c, 'portal-bienvenida', 'La clienta abre su enlace: bienvenida y sus cuatro datos, una sola vez', 'Portal privado', { full: false });
+const f = c.getByRole('form', { name: 'Tus datos' });
+await f.getByLabel('Nombre completo').fill('María José Pérez');
+await f.getByLabel('Ciudad').fill('Barinas');
+await f.getByLabel('Zona o dirección de referencia').fill('Urb. Alto Barinas, calle 3');
+await f.getByLabel('Teléfono').fill('0414 5551234');
+await f.getByLabel('Cédula de identidad').fill('V-18456789');
+await f.getByRole('button', { name: 'Entrar a mi portal' }).click();
+await c.getByRole('heading', { name: 'Hola, María.' }).waitFor();
+await shot(c, 'portal-inicio', 'Su portal recién abierto: accesos rápidos, vendedor y piezas destacadas', 'Portal privado');
+
+// ---------------- Dentro del portal ----------------
+await c.goto(BASE + '/catalogo');
+await shot(c, 'catalogo', 'Catálogo con filtros (ambiente, color, tamaño, acabado, uso recomendado, agarre, precio)', 'Dentro del portal');
 await c.goto(BASE + '/catalogo?use=ducha');
-await shot(c, 'catalogo-ducha', 'Catálogo filtrado: recomendados para ducha (línea Slipstop R11)', 'Sitio público', { full: false });
+await shot(c, 'catalogo-ducha', 'Catálogo filtrado: recomendados para ducha (línea Slipstop R11)', 'Dentro del portal', { full: false });
 const calc = featured[0];
 await c.goto(BASE + `/producto/${calc.sku}`);
 await c.getByLabel('Superficie a cubrir (m²)').fill('30');
-await shot(c, 'producto', 'Ficha de producto con calculadora (30 m²), precio divisas/BCV y guía de uso', 'Sitio público');
+await shot(c, 'producto', 'Ficha de producto con calculadora (30 m²), precio divisas/BCV y guía de uso', 'Dentro del portal');
 await c.getByRole('button', { name: 'Agregar al carrito' }).click();
 await c.getByText('Agregado al carrito').waitFor();
 const second = featured[2] ?? featured[1];
@@ -109,28 +131,20 @@ await c.getByLabel('Cantidad de cajas').fill('6');
 await c.getByRole('button', { name: 'Agregar al carrito' }).click();
 await c.getByText('Agregado al carrito').waitFor();
 await c.goto(BASE + '/carrito');
-await shot(c, 'carrito', 'Carrito persistente con importes recalculados por el servidor', 'Sitio público');
+await shot(c, 'carrito', 'Carrito persistente con importes recalculados por el servidor', 'Dentro del portal');
 await c.goto(BASE + '/contacto');
-await shot(c, 'contacto', 'Contacto comercial: ficha de Juan Alarcon, WhatsApp y chat interno', 'Sitio público');
+await shot(c, 'contacto', 'Contacto comercial: ficha de Juan Alarcon, WhatsApp y chat interno', 'Dentro del portal');
 await c.goto(BASE + '/como-comprar');
-await shot(c, 'como-comprar', 'Cómo comprar: modalidades, horarios de retiro y tasa', 'Sitio público');
+await shot(c, 'como-comprar', 'Cómo comprar: modalidades, horarios de retiro y tasa', 'Dentro del portal');
 await c.goto(BASE + '/politicas');
-await shot(c, 'politicas', 'Políticas comerciales (derivadas de la configuración vigente)', 'Sitio público');
+await shot(c, 'politicas', 'Políticas comerciales (derivadas de la configuración vigente)', 'Dentro del portal');
 await c.goto(BASE + '/no-existe');
-await shot(c, '404', 'Página no encontrada (404)', 'Sitio público', { full: false });
+await shot(c, '404', 'Página no encontrada (404)', 'Dentro del portal', { full: false });
 
 // ---------------- Compra ----------------
 await c.goto(BASE + '/checkout');
-await c.getByRole('form', { name: 'Tus datos' }).waitFor();
-await shot(c, 'checkout-datos', 'Orden de compra · paso 1: los cuatro datos del cliente (sin crear cuenta)', 'Compra', { full: false });
-const f = c.getByRole('form', { name: 'Tus datos' });
-await f.getByLabel('Nombre completo').fill('María José Pérez');
-await f.getByLabel('Ciudad').fill('Barinas');
-await f.getByLabel('Zona o dirección de referencia').fill('Urb. Alto Barinas, calle 3');
-await f.getByLabel('Teléfono').fill('0414 5551234');
-await f.getByLabel('Cédula de identidad').fill('V-18456789');
-await f.getByRole('button', { name: 'Continuar' }).click();
 await c.getByRole('button', { name: 'Corregir datos' }).waitFor();
+await shot(c, 'checkout-datos', 'Orden de compra · paso 1: los datos que registró al entrar al portal', 'Compra', { full: false });
 await c.getByLabel(/Confirmo que Juan Alarcon me atenderá/).check();
 await c.locator('[role="radiogroup"][aria-label="Fecha de retiro"] button:not([disabled])').nth(2).click();
 await c.getByRole('radio', { name: 'Zelle' }).check();
@@ -170,6 +184,10 @@ await c.getByLabel('Referencia de la operación').fill('PM-004512');
 await c.getByLabel('Comprobante').setInputFiles({ name: 'pago.png', mimeType: 'image/png', buffer: PNG });
 await c.getByRole('button', { name: 'Registrar pago' }).click();
 await c.getByRole('heading', { name: '¡Tu orden de compra ha sido registrada!' }).waitFor();
+
+await c.goto(BASE + '/');
+await c.getByRole('heading', { name: 'Órdenes en curso' }).waitFor();
+await shot(c, 'portal-inicio-ordenes', 'Su portal con órdenes en curso, progreso, vendedor y «volver a comprar»', 'Portal privado');
 
 // Chat cliente → vendedor
 await api(custCtx, 'POST', '/api/conversations', { orderId: order1.id, message: 'Hola Juan, ¿puedo retirar el pedido en la tarde?' });
@@ -234,7 +252,7 @@ const mCtx = await browser.newContext(mobile);
 await mCtx.addCookies(await custCtx.cookies(BASE));
 const m = await mCtx.newPage();
 for (const [url, id, title] of [
-  ['/', 'movil-inicio', 'Inicio en el teléfono'],
+  ['/', 'movil-inicio', 'Mi portal en el teléfono'],
   ['/catalogo', 'movil-catalogo', 'Catálogo en el teléfono'],
   [`/producto/${calc.sku}`, 'movil-producto', 'Ficha de producto en el teléfono'],
   [`/cuenta/operaciones/${code2}?nueva=1`, 'movil-cartel', 'Cartel de orden registrada en el teléfono'],
@@ -243,16 +261,16 @@ for (const [url, id, title] of [
   await m.goto(BASE + url);
   await shot(m, id, title, 'Móvil', { mobile: true, full: id !== 'movil-cartel' });
 }
+// Enlace personal abierto en el teléfono (nueva invitación; la pantalla se captura sin completarla).
+const mInvite = await api(juanCtx, 'POST', '/api/staff/invites', { name: 'Pedro Rivas' });
 const mNew = await browser.newContext(mobile);
 const mn = await mNew.newPage();
-await mn.goto(BASE + '/producto/' + calc.sku);
-await mn.getByRole('radio', { name: 'Cajas' }).click();
-await mn.getByLabel('Cantidad de cajas').fill('3');
-await mn.getByRole('button', { name: 'Agregar al carrito' }).click();
-await mn.getByText('Agregado al carrito').waitFor();
-await mn.goto(BASE + '/checkout');
+await mn.goto(BASE + '/catalogo');
+await mn.getByTestId('private-portal').waitFor();
+await shot(mn, 'movil-privado', 'Portal privado en el teléfono (sin enlace)', 'Móvil', { mobile: true, full: false });
+await mn.goto(BASE + mInvite.path);
 await mn.getByRole('form', { name: 'Tus datos' }).waitFor();
-await shot(mn, 'movil-datos', 'Formulario de los cuatro datos en el teléfono', 'Móvil', { mobile: true, full: false });
+await shot(mn, 'movil-datos', 'Enlace personal abierto en el teléfono: bienvenida y los cuatro datos', 'Móvil', { mobile: true, full: false });
 
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify({ code1, code2, shots }, null, 1));
 await browser.close();

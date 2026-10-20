@@ -283,7 +283,7 @@ export interface NotificationItem {
 
 export type PublicSettings = Pick<
   BusinessSettings,
-  'store' | 'whatsapp' | 'pickup' | 'reservation' | 'cancellation' | 'quote' | 'uploads' | 'policies' | 'faq'
+  'store' | 'whatsapp' | 'pickup' | 'reservation' | 'cancellation' | 'quote' | 'uploads' | 'policies' | 'faq' | 'portal'
 >;
 
 export interface PickupAvailability {

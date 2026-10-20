@@ -30,6 +30,8 @@ const envSchema = z.object({
   ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
   ASSISTANT_EFFORT: z.enum(['low', 'medium', 'high']).default('low'),
   ASSISTANT_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(15),
+  /** Aperturas de enlaces de invitación al portal por minuto e IP. */
+  PORTAL_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(20),
 });
 
 const parsed = envSchema.safeParse(process.env);

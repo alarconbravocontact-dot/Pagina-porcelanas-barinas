@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { enterPortal } from './portal-helpers';
 
-test('el asistente virtual responde el horario y calcula cajas desde la ficha', async ({ page }) => {
+test('el asistente virtual responde el horario y calcula cajas desde la ficha', async ({ page, request }) => {
+  await enterPortal(page, request, 'Elena Chat');
   await page.goto('/');
   await page.getByTestId('assistant-launcher').click();
   const panel = page.getByTestId('assistant');

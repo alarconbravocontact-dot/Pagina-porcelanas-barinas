@@ -19,6 +19,7 @@ const SECTIONS: { key: SettingsKey | 'blocked' | 'categories'; label: string }[]
   { key: 'uploads', label: 'Comprobantes' },
   { key: 'policies', label: 'Textos legales' },
   { key: 'faq', label: 'Preguntas frecuentes' },
+  { key: 'portal', label: 'Portal privado' },
   { key: 'categories', label: 'Ambientes (categorías)' },
 ];
 
@@ -99,6 +100,15 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
           {text('mapUrl', 'Enlace a mapa (URL)')}
           {text('timezone', 'Zona horaria comercial (IANA)', 'Ej.: America/Caracas')}
           <HeroUpload current={String(f.heroImageUrl ?? '')} />
+        </>
+      );
+      break;
+    case 'portal':
+      body = (
+        <>
+          {bool('inviteOnly', 'Portal privado: los clientes entran solo con su enlace personal de invitación')}
+          <p className="text-xs text-ink-muted">Desactivado, cualquier visitante ve el catálogo y puede registrarse con sus 4 datos al comprar.</p>
+          {num('inviteValidDays', 'Días de validez de cada enlace de invitación', 'Cada enlace es de un solo uso.')}
         </>
       );
       break;
