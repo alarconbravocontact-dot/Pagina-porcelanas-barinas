@@ -18,7 +18,7 @@ export function visitMessage(order: Pick<Order, 'code' | 'seller'>) {
 export function OrderRegisteredBanner({ order, onViewOrder }: { order: Order; onViewOrder: () => void }) {
   const s = order.seller;
   const { data: settings } = useSettings();
-  const hours = settings?.store.hoursText;
+  const hours = settings?.store.hoursText?.replace(/\.\s*$/, '');
   const city = s.city || 'Barinas';
   const wa = whatsappLink(s.whatsapp, visitMessage(order));
   return (

@@ -221,7 +221,7 @@ export function AccountOrderDetail() {
       {active && !showBanner && (
         <Alert kind="info" className="mt-6" title="Antes de acudir a la sede">
           Contacta a tu vendedor {o.seller.displayName} con tu número de orden {o.code} para que esté preparado para recibirte.
-          {settings?.store.hoursText && ` Horario de atención: ${settings.store.hoursText}.`}{' '}
+          {settings?.store.hoursText && ` Horario de atención: ${settings.store.hoursText.replace(/\.\s*$/, '')}.`}{' '}
           <WhatsAppButton variant="link" number={o.seller.whatsapp} message={visitMessage(o)} label="Escribir por WhatsApp" />
         </Alert>
       )}
