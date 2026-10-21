@@ -9,6 +9,7 @@ import {
   formatVES,
   m2ToUnits,
   unitsToM2String,
+  storeMapLinks,
   whatsappLink,
 } from '@porcelanas/shared';
 import Decimal from 'decimal.js';
@@ -166,7 +167,7 @@ export async function storeInfo() {
     catalogFacets(),
   ]);
   return {
-    store: { name: s.store.name, city: s.store.city, address: s.store.address || null, hours: s.store.hoursText || null, phone: s.store.phone || null, mapUrl: s.store.mapUrl || null },
+    store: { name: s.store.name, city: s.store.city, address: s.store.address || null, hours: s.store.hoursText || null, phone: s.store.phone || null, mapUrl: storeMapLinks(s.store)?.directionsUrl ?? null },
     pickupDays: s.pickup.weekdays.map((d, i) => ({ day: WEEKDAY_LABELS[i], open: d.enabled, hours: d.enabled ? `${d.open}–${d.close}` : null })),
     pickupMaxDaysAhead: s.pickup.maxDaysAheadPickup,
     prepay: { minPercent: s.reservation.prepayMinPercent, maxDaysAhead: s.pickup.maxDaysAheadPrepay, holdHours: s.reservation.holdHours },

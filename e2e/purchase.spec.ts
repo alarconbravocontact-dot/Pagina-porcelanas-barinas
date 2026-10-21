@@ -216,6 +216,15 @@ test.describe('vendedor Juan Alarcon y catálogo de Barinas', () => {
     await page.goto('/contacto');
     await expect(page.getByText('Sede Barinas, Venezuela')).toBeVisible();
     await expect(page.getByText('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.').first()).toBeVisible();
+    // Mapa de la sede: «Cómo llegar» abre la ruta en Google Maps y el mapa se carga solo al pedirlo.
+    const map = page.getByTestId('store-map');
+    await expect(map).toContainText('Consagro, Alto Barinas, frente a Traki, Barinas');
+    await expect(map.getByTestId('directions-link')).toHaveAttribute('href', /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=Consagro/);
+    await expect(map.locator('iframe')).toHaveCount(0);
+    await map.getByRole('button', { name: 'Ver mapa' }).click();
+    await expect(map.locator('iframe')).toHaveAttribute('src', /^https:\/\/www\.google\.com\/maps\?q=Consagro.+output=embed$/);
+    const csp = (await page.request.get('/contacto')).headers()['content-security-policy'] ?? '';
+    expect(csp).toContain('frame-src https://www.google.com');
   });
 
   test('las piezas del catálogo muestran precio en divisas, precio BCV y guía de uso', async ({ page, request }) => {

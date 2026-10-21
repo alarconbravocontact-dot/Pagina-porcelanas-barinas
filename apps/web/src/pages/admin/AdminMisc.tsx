@@ -282,7 +282,13 @@ interface RateRow {
 export function AdminRates() {
   const qc = useQueryClient();
   const { data: settings } = useSettings();
-  const q = useQuery({ queryKey: ['admin-rates'], queryFn: () => api<{ current: RateStatus | null; history: RateRow[] }>('/api/admin/rates') });
+  const q = useQuery({ queryKey: ['admin-rates'], queryFn: () =>
+      api<{
+        current: RateStatus | null;
+        history: RateRow[];
+        auto: { enabled: boolean; sourceUrl: string; intervalMinutes: number; last: ({ ok: boolean; error?: string; rate?: string; effectiveDate?: string; at: string }) | null };
+      }>('/api/admin/rates'),
+  });
   const [form, setForm] = useState({ rate: '', effectiveDate: localDateString(new Date(), settings?.store.timezone), sourceNote: '' });
   const [fields, setFields] = useState<Record<string, string>>({});
   const refresh = () => {
@@ -342,8 +348,31 @@ export function AdminRates() {
             </button>
           </form>
           <section className="card p-5">
-            <h2 className="text-lg">Consulta automática</h2>
-            <p className="mt-1 text-xs text-ink-muted">Lee la tasa del portal configurado en Configuración → Tasa. Solo se registra si la respuesta se pudo leer y validar.</p>
+            <h2 className="text-lg">Actualización automática</h2>
+            {q.data?.auto && (
+              <div className="mt-2 space-y-2 text-sm" data-testid="rate-auto">
+                {q.data.auto.enabled ? (
+                  <Badge color="green">Activada · cada {q.data.auto.intervalMinutes} min</Badge>
+                ) : (
+                  <Badge color="gray">Desactivada (Configuración → Tasa BCV)</Badge>
+                )}
+                <p className="text-xs text-ink-muted">Fuente: {q.data.auto.sourceUrl}</p>
+                {q.data.auto.last ? (
+                  q.data.auto.last.ok ? (
+                    <p className="text-xs text-ink-soft">
+                      Último intento {formatDateTime(q.data.auto.last.at)}: tasa leída Bs. {formatRate(q.data.auto.last.rate!)} (fecha valor {formatShortDate(q.data.auto.last.effectiveDate!)}).
+                    </p>
+                  ) : (
+                    <Alert kind="warning">
+                      Último intento {formatDateTime(q.data.auto.last.at)} sin éxito: {q.data.auto.last.error}. Registre la tasa manualmente mientras tanto.
+                    </Alert>
+                  )
+                ) : (
+                  <p className="text-xs text-ink-muted">Aún no hay intentos desde que se inició el servidor.</p>
+                )}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-ink-muted">Lee la tasa oficial del portal del BCV. Solo se registra si la respuesta se pudo leer y validar; si falla y la tasa vence, la administración recibe un aviso.</p>
             <button type="button" className="btn-outline btn-sm mt-3" onClick={() => fetchBcv.mutate()} disabled={fetchBcv.isPending}>
               {fetchBcv.isPending ? 'Consultando…' : 'Consultar ahora'}
             </button>

@@ -142,6 +142,7 @@ export function legalDocuments(ctx: LegalContext): LegalDocument[] {
             'El proveedor de alojamiento y de base de datos donde funciona el portal, que guarda la información por cuenta de la tienda.',
             'WhatsApp (Meta), solo cuando usted pulsa un botón para escribir a su vendedor; esa conversación se rige por las condiciones de WhatsApp.',
             'Google Fonts: las tipografías del portal se descargan de servidores de Google, que reciben su dirección IP. No instala cookies.',
+            'Google Maps, solo si usted pulsa «Ver mapa» o «Cómo llegar»: Google recibe su dirección IP y puede usar sus propias cookies, según su política de privacidad.',
             usesClaude
               ? 'Anthropic, cuando usa el asistente virtual: sus mensajes se envían a su servicio de inteligencia artificial para generar la respuesta (vea «Uso del asistente de IA»).'
               : 'El asistente virtual funciona dentro del portal; sus mensajes no se envían a terceros.',
@@ -197,6 +198,7 @@ export function legalDocuments(ctx: LegalContext): LegalDocument[] {
           heading: 'Lo que no usamos',
           paragraphs: [
             'No usamos cookies de analítica, publicidad ni rastreo de terceros. Como todas las cookies del portal son estrictamente necesarias para que funcione, no requieren su consentimiento; le informamos de ellas por transparencia.',
+            'El mapa de la sede (Google Maps) no se carga hasta que usted pulsa «Ver mapa». A partir de ese momento Google puede instalar sus propias cookies, que se rigen por la política de privacidad de Google.',
           ],
         },
         {

@@ -27,7 +27,8 @@ import { storage } from '../lib/storage';
 import { createProduct, getProduct, listCatalog, toAdminProduct, updateProduct } from '../services/catalog';
 import { adjustInventory } from '../services/inventory';
 import { fromDbDate, toDbDate } from '../services/pickup';
-import { fetchBcvRate, getCurrentRate, listRates, recordManualRate } from '../services/rates';
+import { autoRateStatus, fetchBcvRate, getCurrentRate, listRates, recordAutoRateResult, recordManualRate } from '../services/rates';
+import { RATE_FETCH_INTERVAL_MS } from '../jobs';
 import { dashboard } from '../services/reports';
 import { getSettings, updateSetting } from '../services/settings';
 import { isMethodConfigured } from '../services/paymentMethods';
@@ -277,7 +278,8 @@ export async function adminRoutes(app: FastifyInstance) {
   // ---------------- Tasa BCV ----------------
   app.get('/api/admin/rates', async (req) => {
     requirePermission(req, 'rates:manage');
-    return { current: await getCurrentRate(), history: await listRates() };
+    const s = await getSettings();
+    return { current: await getCurrentRate(), history: await listRates(), auto: { enabled: s.rate.autoFetch, sourceUrl: s.rate.sourceUrl, intervalMinutes: RATE_FETCH_INTERVAL_MS / 60_000, last: autoRateStatus.last } };
   });
 
   app.post('/api/admin/rates', async (req, reply) => {
@@ -291,6 +293,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post('/api/admin/rates/fetch', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req) => {
     requirePermission(req, 'rates:manage');
     const result = await fetchBcvRate();
+    recordAutoRateResult(result);
     await audit(req, 'rate.fetch', 'ExchangeRate', null, result as unknown as Prisma.InputJsonValue);
     return result;
   });

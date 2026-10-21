@@ -7,3 +7,4 @@ export * from './schemas';
 export * from './whatsapp';
 export * from './customer';
 export * from './legal';
+export * from './maps';

@@ -8,6 +8,7 @@ import type { Order, Product, Seller } from '../lib/types';
 import { useSession } from '../hooks/session';
 import { useCart, useSellers, useSettings } from '../hooks/data';
 import { CustomerProfileForm } from '../components/CustomerProfileForm';
+import { StoreMap } from '../components/StoreMap';
 import { SellerContactCard } from '../components/SellerContact';
 import { ProductCard } from '../components/ProductCard';
 import { OrderProgress } from '../components/OrderConfirmation';
@@ -234,6 +235,7 @@ export function PortalHome() {
               </Alert>
             )
           )}
+          <StoreMap compact />
         </aside>
       </div>
 

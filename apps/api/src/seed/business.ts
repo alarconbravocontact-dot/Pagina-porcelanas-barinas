@@ -5,7 +5,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Prisma, PrismaClient, Finish, AntiSlip, SlipRating } from '@prisma/client';
-import { m2ToUnits, priceBoxFromM2, parseMoneyToCents, toWhatsappNumber, SETTINGS_DEFAULTS, STORE_HOURS_TEXT } from '@porcelanas/shared';
+import { m2ToUnits, priceBoxFromM2, parseMoneyToCents, toWhatsappNumber, SETTINGS_DEFAULTS, STORE_ADDRESS_TEXT, STORE_HOURS_TEXT } from '@porcelanas/shared';
 
 type Db = PrismaClient;
 
@@ -107,7 +107,7 @@ export async function ensureSeller(db: Db, data = JUAN) {
 /** Completa datos de la sede y WhatsApp solo si siguen vacíos (no pisa la configuración del panel). */
 export async function ensureStoreDefaults(db: Db, whatsapp: string) {
   for (const [key, patch] of [
-    ['store', { city: 'Barinas', hoursText: STORE_HOURS_TEXT }],
+    ['store', { city: 'Barinas', hoursText: STORE_HOURS_TEXT, address: STORE_ADDRESS_TEXT }],
     ['whatsapp', { number: whatsapp }],
   ] as const) {
     const row = await db.businessSetting.findUnique({ where: { key } });

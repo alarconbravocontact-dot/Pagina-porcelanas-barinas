@@ -53,6 +53,8 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         scriptSrc: ["'self'"],
         connectSrc: ["'self'", 'ws:', 'wss:'],
+        // Mapa de la sede: se incrusta Google Maps solo cuando el visitante pulsa «Ver mapa».
+        frameSrc: ['https://www.google.com', 'https://maps.google.com'],
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         objectSrc: ["'none'"],

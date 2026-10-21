@@ -123,7 +123,7 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
   },
   cancellation: { customerCancelMinHours: 24, rescheduleMinHours: 24, maxReschedules: 2, policyText: '' },
   quote: { validityMinutes: 30 },
-  rate: { autoFetch: false, sourceUrl: 'https://www.bcv.org.ve/', maxAgeHours: 72, blockWhenStale: true },
+  rate: { autoFetch: true, sourceUrl: 'https://www.bcv.org.ve/', maxAgeHours: 72, blockWhenStale: true },
   uploads: { maxProofMB: 5 },
   policies: { termsText: '', privacyText: '', returnsText: '', legalTermsText: '', legalPrivacyText: '', legalCookiesText: '', legalAiText: '' },
   portal: { inviteOnly: true, inviteValidDays: 7 },
@@ -133,6 +133,8 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
 /** Claves visibles públicamente (sin datos internos). */
 /** Horario de atención de la sede de Barinas (texto visible). */
 export const STORE_HOURS_TEXT = 'Lunes a viernes, de 8:00 a. m. a 5:00 p. m.';
+/** Dirección de la sede de Barinas indicada por el negocio. */
+export const STORE_ADDRESS_TEXT = 'Consagro, Alto Barinas, frente a Traki';
 
 export const PUBLIC_SETTINGS_KEYS: SettingsKey[] = [
   'store',

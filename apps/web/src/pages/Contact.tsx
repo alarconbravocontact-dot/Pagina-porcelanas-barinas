@@ -1,3 +1,4 @@
+import { StoreMap } from '../components/StoreMap';
 import { Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { useSellers, useSettings } from '../hooks/data';
@@ -30,13 +31,9 @@ export function ContactPage() {
               Horario de atención: <span className="text-ink">{store.hoursText}</span>
             </p>
           )}
-          {store?.mapUrl && (
-            <a href={store.mapUrl} target="_blank" rel="noopener noreferrer" className="btn-outline mt-4">
-              Cómo llegar
-            </a>
-          )}
         </div>
       </div>
+      <StoreMap className="mt-6" />
       <section data-tour="contact-channels" className="mt-12 grid grid-cols-1 gap-6 border-t border-stone-200 pt-10 md:grid-cols-2">
         <div>
           <h2 className="text-2xl">WhatsApp</h2>

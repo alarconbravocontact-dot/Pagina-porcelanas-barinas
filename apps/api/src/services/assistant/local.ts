@@ -146,7 +146,7 @@ export async function localAnswer(req: AssistantRequest, customerId: string | nu
   if (has(t, 'donde', 'direccion', 'ubicacion', 'ubicad', 'sede', 'llegar', 'mapa', 'tienda fisica')) {
     const where = info.store.address ? `${info.store.address}, ${info.store.city}` : `${info.store.city}. La dirección exacta te la confirma tu vendedor al coordinar la visita`;
     return reply(`La sede está en ${where}.${hours ? ` Horario: ${hours}.` : ''}`, {
-      actions: [...(info.store.mapUrl ? [{ label: 'Cómo llegar', url: info.store.mapUrl }] : []), ...(sellerAction ? [sellerAction] : [])],
+      actions: [...(info.store.mapUrl ? [{ label: 'Cómo llegar (Google Maps)', url: info.store.mapUrl }] : []), ...(sellerAction ? [sellerAction] : [])],
     });
   }
 

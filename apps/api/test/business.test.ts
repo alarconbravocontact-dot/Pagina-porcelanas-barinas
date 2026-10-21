@@ -186,6 +186,7 @@ describe('Vendedor Juan Alarcon, métodos de pago y catálogo de Barinas', () =>
     const pub = (await new Client(s.app).get('/api/settings/public')).json();
     expect(pub.store.hoursText).toBe('Lunes a viernes, de 8:00 a. m. a 5:00 p. m.');
     expect(pub.store.city).toBe('Barinas');
+    expect(pub.store.address).toBe('Consagro, Alto Barinas, frente a Traki');
     // Un horario editado en el panel se conserva.
     await s.admin.put('/api/admin/settings/store', { ...pub.store, hoursText: 'Horario especial de diciembre' });
     await ensureStoreDefaults(prisma, '584125552594');

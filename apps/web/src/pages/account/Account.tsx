@@ -1,3 +1,4 @@
+import { StoreMap } from '../../components/StoreMap';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Navigate, Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -224,6 +225,7 @@ export function AccountOrderDetail() {
           <WhatsAppButton variant="link" number={o.seller.whatsapp} message={visitMessage(o)} label="Escribir por WhatsApp" />
         </Alert>
       )}
+      {active && <StoreMap compact className="mt-4" />}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <section className="card p-5" data-tour="order-items">

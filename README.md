@@ -94,7 +94,8 @@ Ver [.env.example](.env.example). Ninguna contiene secretos por defecto.
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_DEMO_PASSWORD` | Solo para las semillas |
 
 ## Integraciones externas pendientes
-- **Tasa BCV automática**: implementada contra la estructura del portal del BCV pero **no verificada** en vivo (el portal no era accesible desde el entorno de desarrollo). Está desactivada por defecto; el registro manual auditado es el flujo principal.
+- **Tasa BCV automática**: **activada por defecto**. El servidor consulta `https://www.bcv.org.ve/` cada hora, registra la tasa solo si la lee y valida (sin duplicados) y avisa a la administración (campana, como máximo cada 12 h) si falla mientras la tasa falta o está vencida. El panel «Tasa BCV» muestra el último intento. **No verificada en vivo**: el portal del BCV no es accesible desde el entorno de desarrollo; la lectura está probada con la estructura conocida de la página. El registro manual sigue disponible como respaldo.
+- **Mapa de la sede**: Google Maps sin clave de API, a partir de la dirección (o de las coordenadas si se pega un enlace de Google Maps con `@lat,lng` en Configuración → Sede → Enlace a mapa). El mapa incrustado se carga solo al pulsar «Ver mapa»; «Cómo llegar» abre la ruta.
 - **Pasarelas de pago**: no existen APIs oficiales integradas. Pago Móvil, Zelle, Binance, transferencia y efectivo funcionan con **verificación manual** real; nunca se confirman automáticamente.
 - **WhatsApp**: botón `wa.me` con mensaje prellenado; requiere configurar el número. No se usa la API de WhatsApp Business.
 - No se envían correos ni SMS; las notificaciones son internas (campana y tiempo real).

@@ -83,6 +83,12 @@ export type FetchResult =
   | { ok: true; created: boolean; rate: string; effectiveDate: string }
   | { ok: false; error: string };
 
+/** Último intento de la consulta automática (en memoria; se muestra en el panel de la tasa). */
+export const autoRateStatus: { last: (FetchResult & { at: Date }) | null } = { last: null };
+export function recordAutoRateResult(result: FetchResult, at = new Date()) {
+  autoRateStatus.last = { ...result, at };
+}
+
 /** Consulta la fuente configurada. Solo registra la tasa si se pudo leer y validar. */
 export async function fetchBcvRate(fetchImpl: typeof fetch = fetch): Promise<FetchResult> {
   const settings = await getSettings();
@@ -93,6 +99,12 @@ export async function fetchBcvRate(fetchImpl: typeof fetch = fetch): Promise<Fet
     if (!res.ok) return { ok: false, error: `La fuente respondió HTTP ${res.status}` };
     html = await res.text();
   } catch (err) {
+    // El portal del BCV ha publicado a veces una cadena de certificados incompleta: se informa
+    // con claridad en lugar de desactivar la verificación TLS (ver docs/DEPLOYMENT.md).
+    const code = String((err as { cause?: { code?: string } }).cause?.code ?? '');
+    if (/CERT|SELF_SIGNED|UNABLE_TO_VERIFY/.test(code)) {
+      return { ok: false, error: `El certificado de seguridad de la fuente no se pudo verificar (${code}); configure NODE_EXTRA_CA_CERTS según docs/DEPLOYMENT.md` };
+    }
     return { ok: false, error: `No se pudo conectar con la fuente: ${(err as Error).message}` };
   }
   const parsed = parseBcvHtml(html);

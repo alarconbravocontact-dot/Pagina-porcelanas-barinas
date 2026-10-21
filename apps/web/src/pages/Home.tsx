@@ -8,6 +8,7 @@ import { useSellers, useSettings } from '../hooks/data';
 import { ProductCard, ProductImage } from '../components/ProductCard';
 import { Calculator } from '../components/Calculator';
 import { RateNotice } from '../components/RateNotice';
+import { StoreMap } from '../components/StoreMap';
 import { WhatsAppButton } from '../components/WhatsAppButton';
 import { EmptyState, ErrorState, Spinner } from '../components/ui';
 import { useFaq } from './HowToBuy';
@@ -332,15 +333,10 @@ function StoreSection() {
           )}
           {s.phone && <p className="mt-1 text-sm text-ink-muted">Teléfono: {s.phone}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
-            {s.mapUrl && (
-              <a href={s.mapUrl} target="_blank" rel="noopener noreferrer" className="btn-outline">
-                Cómo llegar
-              </a>
-            )}
             <WhatsAppButton label="Escribir a la sede" />
           </div>
         </div>
-        <div className="min-h-[200px] bg-[repeating-linear-gradient(90deg,#e8e8e6_0_1px,transparent_1px_56px),repeating-linear-gradient(0deg,#e8e8e6_0_1px,transparent_1px_56px)] bg-stone-50" aria-hidden />
+        <StoreMap />
       </div>
     </section>
   );
