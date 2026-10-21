@@ -74,6 +74,12 @@ describe('Asistente virtual', () => {
     expect(mine.reply).toMatch(/Aún no tienes órdenes/);
   });
 
+  it('se presenta como asistente automático y remite a los términos y políticas', async () => {
+    const res = (await ask(guest, '¿Eres una persona? ¿Qué hacen con mis datos personales?')).json();
+    expect(res.reply).toMatch(/asistente automático, no una persona/);
+    expect(res.actions.map((a: { url: string }) => a.url)).toEqual(['/politicas#terminos', '/politicas#asistente']);
+  });
+
   it('valida el formato de la conversación', async () => {
     expect((await guest.post('/api/assistant/messages', { messages: [] })).statusCode).toBe(400);
     expect((await guest.post('/api/assistant/messages', { messages: [{ role: 'assistant', content: 'hola' }] })).statusCode).toBe(400);

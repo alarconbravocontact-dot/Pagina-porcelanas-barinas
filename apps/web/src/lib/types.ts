@@ -284,7 +284,7 @@ export interface NotificationItem {
 export type PublicSettings = Pick<
   BusinessSettings,
   'store' | 'whatsapp' | 'pickup' | 'reservation' | 'cancellation' | 'quote' | 'uploads' | 'policies' | 'faq' | 'portal'
->;
+> & { legal?: { customerSessionDays: number; staffSessionHours: number; assistantProvider: 'claude' | 'local' } };
 
 export interface PickupAvailability {
   timezone: string;

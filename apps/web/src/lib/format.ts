@@ -6,8 +6,9 @@ export function formatDateTime(iso: string | Date) {
   return new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 }
 
+/** Fecha calendario ("2026-10-20" o una fecha ISO completa de una columna DATE) sin desfase de zona horaria. */
 export function formatShortDate(date: string) {
-  return new Intl.DateTimeFormat('es-VE', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+  return new Intl.DateTimeFormat('es-VE', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date.slice(0, 10)}T12:00:00Z`));
 }
 
 export function formatTime(iso: string) {

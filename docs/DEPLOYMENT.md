@@ -48,5 +48,6 @@ Socket.IO funciona en un solo proceso. Para varias instancias se requiere un ada
 - [ ] Respaldos automáticos de PostgreSQL y de `STORAGE_DIR`.
 - [ ] Monitoreo de logs y de `/api/health`.
 - [ ] Revisión de las advertencias de `npm audit` (ver PROGRESS_LOG).
+- [ ] Textos legales (Configuración → Textos legales): los términos, la privacidad, las cookies y el uso del asistente de IA vienen con un **borrador** redactado según el funcionamiento real de la plataforma; deben revisarse con un abogado y completarse (contacto, plazos de conservación, política de devoluciones).
 - [ ] Portal privado: `PUBLIC_ORIGIN` con el dominio real (se usa en los enlaces de invitación si el navegador no envía su origen) y decidir si el portal queda privado (Configuración → Portal privado).
 - [ ] Asistente virtual: decidir si se usa Claude (`ANTHROPIC_API_KEY`, con límite de gasto en la consola de Anthropic) o el motor integrado, y probarlo con preguntas reales de clientes.

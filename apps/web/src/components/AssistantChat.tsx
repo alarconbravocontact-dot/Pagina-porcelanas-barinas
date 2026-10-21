@@ -255,7 +255,12 @@ export function AssistantChat() {
                 <ArrowUp className="h-4 w-4" aria-hidden />
               </button>
             </div>
-            <p className="mt-2 text-[11px] leading-snug text-ink-muted">Asistente automático con los datos de la tienda. Para confirmar tu pedido o tu pago, habla con tu vendedor.</p>
+            <p className="mt-2 text-[11px] leading-snug text-ink-muted">
+              Asistente automático: puede equivocarse. Lo que vale es tu orden de compra y la confirmación de tu vendedor. No escribas tu cédula ni claves.{' '}
+              <Link to="/politicas#asistente" className="underline underline-offset-2 hover:text-ink">
+                Uso del asistente de IA
+              </Link>
+            </p>
           </form>
         </section>
       )}

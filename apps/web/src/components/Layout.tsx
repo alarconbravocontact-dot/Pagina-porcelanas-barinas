@@ -7,6 +7,7 @@ import { NotificationsBell } from './NotificationsBell';
 import { WhatsAppButton } from './WhatsAppButton';
 import { GuidedTour } from './GuidedTour';
 import { AssistantChat } from './AssistantChat';
+import { CookieNotice } from './CookieNotice';
 import { PORTAL_PUBLIC_PATHS, PrivatePortal } from '../pages/Portal';
 import { Spinner } from './ui';
 import { useEffect } from 'react';
@@ -194,6 +195,7 @@ export function Layout() {
       <WhatsAppButton variant="floating" />
       {!lockedOut && <GuidedTour />}
       {!lockedOut && <AssistantChat />}
+      <CookieNotice />
     </div>
   );
 }
@@ -258,23 +260,21 @@ function Footer({ storeName, minimal = false }: { storeName: string; minimal?: b
           </div>
         )}
         <div>
-          <p className="eyebrow">Políticas</p>
+          <p className="eyebrow">Términos y políticas</p>
           <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <Link to="/politicas#condiciones" className="hover:text-ink">
-                Condiciones comerciales
-              </Link>
-            </li>
-            <li>
-              <Link to="/politicas#cancelaciones" className="hover:text-ink">
-                Cancelaciones y cambios de fecha
-              </Link>
-            </li>
-            <li>
-              <Link to="/politicas#privacidad" className="hover:text-ink">
-                Privacidad
-              </Link>
-            </li>
+            {[
+              ['terminos', 'Términos y condiciones'],
+              ['privacidad', 'Privacidad'],
+              ['cookies', 'Cookies'],
+              ['asistente', 'Uso del asistente de IA'],
+              ['condiciones', 'Condiciones comerciales'],
+            ].map(([id, label]) => (
+              <li key={id}>
+                <Link to={`/politicas#${id}`} className="hover:text-ink">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

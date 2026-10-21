@@ -9,6 +9,8 @@ import { createQuote } from '../services/quotes';
 import { getCurrentRate } from '../services/rates';
 import { getPublicSettings, getSettings } from '../services/settings';
 import { publicMethod } from '../services/paymentMethods';
+import { assistantProvider } from '../services/assistant';
+import { config } from '../config';
 
 export async function publicRoutes(app: FastifyInstance) {
   app.get('/api/health', async () => {
@@ -16,7 +18,11 @@ export async function publicRoutes(app: FastifyInstance) {
     return { ok: true, time: new Date().toISOString() };
   });
 
-  app.get('/api/settings/public', async () => getPublicSettings());
+  app.get('/api/settings/public', async () => ({
+    ...(await getPublicSettings()),
+    // Datos reales de funcionamiento que citan los textos legales (duración de sesiones y motor del asistente).
+    legal: { customerSessionDays: config.CUSTOMER_SESSION_TTL_DAYS, staffSessionHours: config.SESSION_TTL_HOURS, assistantProvider: assistantProvider() },
+  }));
 
   app.get('/api/catalog', async (req) => listCatalog(parse(catalogQuerySchema, req.query)));
   app.get('/api/catalog/facets', async () => catalogFacets());

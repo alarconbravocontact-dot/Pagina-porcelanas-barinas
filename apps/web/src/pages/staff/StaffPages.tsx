@@ -404,7 +404,7 @@ export function StaffPayments() {
             <p className="mt-2 text-lg font-semibold">
               {p.currency === 'VES' ? formatVES(p.amountCents) : formatUSD(p.amountCents)}{' '}
               <span className="text-xs font-normal text-ink-muted">
-                {p.method.name} · ref. {p.reference} · {p.paidAt}
+                {p.method.name} · ref. {p.reference} · pagado el {formatShortDate(p.paidAt)}
                 {p.currency === 'VES' && ` · acredita ${formatUSD(p.creditUsdCents)}`}
               </span>
             </p>

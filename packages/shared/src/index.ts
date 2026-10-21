@@ -6,3 +6,4 @@ export * from './settings';
 export * from './schemas';
 export * from './whatsapp';
 export * from './customer';
+export * from './legal';

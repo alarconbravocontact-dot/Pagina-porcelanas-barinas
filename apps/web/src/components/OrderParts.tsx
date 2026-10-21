@@ -1,5 +1,5 @@
 import type { Order } from '../lib/types';
-import { formatDateLong, formatDateTime, formatM2, formatRate, formatUSD, formatVES, ORDER_TYPE_LABELS } from '../lib/format';
+import { formatDateLong, formatDateTime, formatM2, formatRate, formatShortDate, formatUSD, formatVES, ORDER_TYPE_LABELS } from '../lib/format';
 import { OrderStatusBadge, PaymentReviewBadge, PaymentStatusBadge } from './StatusBadges';
 import { PRICE_LIST_LABELS } from '@porcelanas/shared';
 
@@ -118,7 +118,7 @@ export function PaymentsList({ order, renderExtra }: { order: Order; renderExtra
             <PaymentStatusBadge status={p.status} />
           </div>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Ref. {p.reference} · pagado el {p.paidAt} · registrado {formatDateTime(p.createdAt)}
+            Ref. {p.reference} · pagado el {formatShortDate(p.paidAt)} · registrado {formatDateTime(p.createdAt)}
             {p.reviewedBy && ` · revisado por ${p.reviewedBy}`}
           </p>
           {p.reviewNotes && <p className="mt-1 text-xs">Observación: {p.reviewNotes}</p>}

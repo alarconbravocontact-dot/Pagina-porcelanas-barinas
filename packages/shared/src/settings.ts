@@ -62,6 +62,11 @@ export const settingsSchemas = {
     termsText: z.string().trim().max(20_000),
     privacyText: z.string().trim().max(20_000),
     returnsText: z.string().trim().max(20_000),
+    /** Si se completan, reemplazan al texto predeterminado (borrador) de cada documento legal. */
+    legalTermsText: z.string().trim().max(40_000),
+    legalPrivacyText: z.string().trim().max(40_000),
+    legalCookiesText: z.string().trim().max(40_000),
+    legalAiText: z.string().trim().max(40_000),
   }),
   portal: z.object({
     /** Portal privado: solo se entra con un enlace personal de invitación (o una sesión ya abierta). */
@@ -120,7 +125,7 @@ export const SETTINGS_DEFAULTS: BusinessSettings = {
   quote: { validityMinutes: 30 },
   rate: { autoFetch: false, sourceUrl: 'https://www.bcv.org.ve/', maxAgeHours: 72, blockWhenStale: true },
   uploads: { maxProofMB: 5 },
-  policies: { termsText: '', privacyText: '', returnsText: '' },
+  policies: { termsText: '', privacyText: '', returnsText: '', legalTermsText: '', legalPrivacyText: '', legalCookiesText: '', legalAiText: '' },
   portal: { inviteOnly: true, inviteValidDays: 7 },
   faq: { items: [] },
 };

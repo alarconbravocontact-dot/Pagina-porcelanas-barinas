@@ -208,6 +208,17 @@ function SectionForm<K extends SettingsKey>({ sectionKey, value }: { sectionKey:
           {text('termsText', 'Condiciones comerciales adicionales', undefined, true)}
           {text('returnsText', 'Política de devoluciones', undefined, true)}
           {text('privacyText', 'Aviso de privacidad adicional', undefined, true)}
+          <Alert kind="warning" title="Documentos legales del portal">
+            Si dejas estos campos vacíos, el portal muestra textos predeterminados redactados según el funcionamiento real de la plataforma (cookies, datos, asistente). Son un borrador: revísalos con un
+            abogado. Lo que escribas aquí reemplaza el documento completo.{' '}
+            <a href="/politicas" target="_blank" rel="noopener" className="underline">
+              Ver textos actuales
+            </a>
+          </Alert>
+          {text('legalTermsText', 'Términos y condiciones de uso (reemplaza el predeterminado)', undefined, true)}
+          {text('legalPrivacyText', 'Política de privacidad (reemplaza la predeterminada)', undefined, true)}
+          {text('legalCookiesText', 'Política de cookies (reemplaza la predeterminada)', undefined, true)}
+          {text('legalAiText', 'Uso del asistente de IA (reemplaza el predeterminado)', undefined, true)}
         </>
       );
       break;

@@ -108,6 +108,15 @@ export async function localAnswer(req: AssistantRequest, customerId: string | nu
     });
   }
 
+  if (has(t, 'cookie', 'privacidad', 'mis datos', 'datos personales', 'terminos', 'condiciones de uso', 'inteligencia artificial', 'eres un robot', 'eres humano', 'eres una persona')) {
+    return reply('Soy un asistente automático, no una persona: puedo equivocarme, y lo que vale es tu orden de compra y la confirmación de tu vendedor. Solo usamos cookies necesarias (sesión, seguridad y carrito) y tus datos se usan para gestionar tus compras. Todo está explicado en los términos y políticas.', {
+      actions: [
+        { label: 'Términos y políticas', url: '/politicas#terminos' },
+        { label: 'Uso del asistente de IA', url: '/politicas#asistente' },
+      ],
+    });
+  }
+
   // Estado de órdenes del propio cliente.
   if (/\bpc-[a-z0-9]{4,}/.test(t) || has(t, 'mi orden', 'mis orden', 'mi pedido', 'mis pedido', 'mi compra', 'estado de', 'ya llego', 'listo para retirar')) {
     const mine = await myOrders(customerId);

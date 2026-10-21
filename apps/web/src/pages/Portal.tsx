@@ -131,6 +131,17 @@ export function PortalInvitePage() {
             <div className="mt-6">
               <CustomerProfileForm submitTo={`/api/portal/invites/${encodeURIComponent(token)}/accept`} submitLabel="Entrar a mi portal" onSaved={() => navigate('/', { replace: true })} />
             </div>
+            <p className="mt-4 text-xs leading-relaxed text-ink-muted" data-testid="invite-consent">
+              Al entrar aceptas los{' '}
+              <a href="/politicas#terminos" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-ink">
+                términos y condiciones
+              </a>{' '}
+              y la{' '}
+              <a href="/politicas#privacidad" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-ink">
+                política de privacidad
+              </a>
+              . Solo usamos cookies necesarias.
+            </p>
           </>
         )}
       </div>
